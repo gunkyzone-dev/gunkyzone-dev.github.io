@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PDF Viewer</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0a0a;
+      color: #d4c0c0;
+      font-family: 'Share Tech Mono', monospace;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .controls {
+      background: #131313;
+      border-bottom: 1px solid #2a1a1a;
+      padding: 12px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    button {
+      padding: 8px 16px;
+      border: 1px solid #2a1a1a;
+      background: #131313;
+      color: #9b0000;
+      cursor: pointer;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 12px;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    button:hover {
+      background: #9b0000;
+      color: #0a0a0a;
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .info {
+      font-size: 12px;
+      color: #5a3a3a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    input[type="range"] {
+      width: 100px;
+    }
+
+    .viewer-container {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      gap: 20px;
+    }
+
+    .pdf-pages {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      width: 100%;
+    }
+
+    .pdf-page {
+      border: 1px solid #2a1a1a;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      background: white;
+    }
+
+    .pdf-page canvas {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .loading {
+      text-align: center;
+      color: #5a3a3a;
+      padding: 40px;
+    }
+
+    .fullscreen-btn {
+      margin-left: auto;
+    }
+
+    .viewer-container:fullscreen {
+      background: #0a0a0a;
+      padding: 40px 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <button onclick="previousPage()" id="prev-btn">← Previous</button>
+    <span class="info">Page <span id="page-num">1</span> of <span id="page-count">0</span></span>
+    <button onclick="nextPage()" id="next-btn">Next →</button>
+    <span class="info">Zoom:</span>
+    <input type="range" id="zoom-slider" min="50" max="200" value="100" onchange="updateZoom()">
+    <span class="info"><span id="zoom-level">100</span>%</span>
+    <button class="fullscreen-btn" onclick="toggleFullscreen()">⛶ Fullscreen</button>
+  </div>
+
+  <div class="viewer-container" id="viewer-container">
+    <div class="loading">Loading PDF...</div>
+  </div>
+
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    var currentPdf = null;
+    var totalPages = 0;
+    var zoomLevel = 100;
+    var pdfUrl = null;
+
+    // Get PDF URL from query parameter
+    function getPdfUrl() {
+      var params = new URLSearchParams(window.location.search);
+      return params.get('url');
+    }
+
+    function loadPdf(url) {
+      pdfUrl = url;
+      var container = document.getElementById('viewer-container');
+      container.innerHTML = '<div class="loading">Loading PDF...</div>';
+
+      pdfjsLib.getDocument(url).promise.then(function(pdf) {
+        currentPdf = pdf;
+        totalPages = pdf.numPages;
+        document.getElementById('page-count').textContent = totalPages;
+        renderAllPages();
+      }).catch(function(err) {
+        container.innerHTML = '<div class="loading">Error loading PDF: ' + err.message + '</div>';
+      });
+    }
+
+    function renderAllPages() {
+      var container = document.getElementById('viewer-container');
+      container.innerHTML = '';
+
+      var pagesDiv = document.createElement('div');
+      pagesDiv.className = 'pdf-pages';
+
+      for (var pageNum = 1; pageNum <= totalPages; pageNum++) {
+        renderPage(pageNum, pagesDiv);
+      }
+
+      container.appendChild(pagesDiv);
+    }
+
+    function renderPage(pageNum, container) {
+      if (!currentPdf) return;
+
+      currentPdf.getPage(pageNum).then(function(page) {
+        var scale = zoomLevel / 100;
+        var viewport = page.getViewport({ scale: scale });
+
+        var pageDiv = document.createElement('div');
+        pageDiv.className = 'pdf-page';
+
+        var canvas = document.createElement('canvas');
+        var context = canvas.getContext('2d');
+
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        page.render({
+          canvasContext: context,
+          viewport: viewport
+        }).promise.then(function() {
+          pageDiv.appendChild(canvas);
+          container.appendChild(pageDiv);
+        });
+      });
+    }
+
+    function updateZoom() {
+      zoomLevel = parseInt(document.getElementById('zoom-slider').value);
+      document.getElementById('zoom-level').textContent = zoomLevel;
+      renderAllPages();
+    }
+
+    function nextPage() {
+      var container = document.getElementById('viewer-container');
+      container.scrollTop += 500;
+    }
+
+    function previousPage() {
+      var container = document.getElementById('viewer-container');
+      container.scrollTop -= 500;
+    }
+
+    function toggleFullscreen() {
+      var container = document.getElementById('viewer-container');
+      if (!document.fullscreenElement) {
+        container.requestFullscreen().catch(function(err) {
+          alert('Error entering fullscreen: ' + err.message);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    // Load PDF on page load
+    window.addEventListener('load', function() {
+      var url = getPdfUrl();
+      if (url) {
+        loadPdf(url);
+      } else {
+        document.getElementById('viewer-container').innerHTML = '<div class="loading">No PDF URL provided</div>';
+      }
+    });
+  </script>
+</body>
+</html>
