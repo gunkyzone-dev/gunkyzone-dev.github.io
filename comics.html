@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GunkyZone — Comics</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:        #060606;
+      --bg2:       #0d0d0d;
+      --bg3:       #131313;
+      --border:    #2a1a1a;
+      --dim:       #5a3a3a;
+      --text:      #d4c0c0;
+      --accent:    #9b0000;
+      --accent2:   #cc0000;
+      --glow:      rgba(155, 0, 0, 0.22);
+      --font-mono: 'Share Tech Mono', monospace;
+      --font-disp: 'VT323', monospace;
+      --font-body: 'IM Fell English', serif;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: var(--font-mono); font-size: 15px;
+      line-height: 1.7; min-height: 100vh; overflow-x: hidden;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background: repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(0,0,0,0.18) 2px, rgba(0,0,0,0.18) 4px);
+      pointer-events: none; z-index: 1000;
+    }
+    body::after {
+      content: ''; position: fixed; inset: 0;
+      background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.6) 100%);
+      pointer-events: none; z-index: 999;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; color: var(--accent2); }
+
+    .site-wrapper {
+      max-width: 960px; margin: 0 auto; padding: 40px 20px;
+      animation: fadein 0.6s ease both;
+    }
+    @keyframes fadein { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+    header { border-bottom: 1px solid var(--border); padding: 28px 0 18px; }
+    .site-title {
+      font-family: var(--font-disp); font-size: clamp(52px, 9vw, 90px);
+      line-height: 1; color: var(--accent); text-shadow: 0 0 40px var(--glow); letter-spacing: 2px;
+    }
+    .site-title span { color: var(--accent2); }
+    .site-subtitle { font-family: var(--font-body); font-style: italic; color: var(--dim); font-size: 14px; margin-top: 10px; }
+
+    nav { display: flex; margin-top: 28px; border: 1px solid var(--border); width: fit-content; }
+    nav a {
+      display: block; padding: 7px 18px; color: var(--dim);
+      font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase;
+      border-right: 1px solid var(--border); transition: all 0.15s;
+    }
+    nav a:last-child { border-right: none; }
+    nav a:hover { background: var(--bg3); color: var(--accent); text-decoration: none; }
+    nav a.active { background: var(--bg3); color: var(--accent); }
+
+    main { padding: 40px 0 80px; }
+
+    .comics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+
+    .comic-card {
+      border: 1px solid var(--border);
+      padding: 16px;
+      background: var(--bg2);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .comic-card:hover {
+      background: var(--bg3);
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .comic-card h3 {
+      font-size: 14px;
+      color: var(--accent);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .comic-card p {
+      font-size: 12px;
+      color: var(--dim);
+    }
+
+    .pdf-viewer {
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      padding: 20px;
+      border-radius: 6px;
+      margin-bottom: 24px;
+    }
+
+    .pdf-controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .pdf-controls button {
+      padding: 8px 16px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--accent);
+      cursor: pointer;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    .pdf-controls button:hover {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    .pdf-controls button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .pdf-info {
+      font-size: 12px;
+      color: var(--dim);
+    }
+
+    #pdf-canvas {
+      max-width: 100%;
+      height: auto;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      display: block;
+      margin: 0 auto;
+    }
+
+    .pdf-viewer-container {
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      border-radius: 4px;
+      height: 600px;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .pdf-pages {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      gap: 20px;
+    }
+
+    .pdf-page {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    }
+
+    .pdf-page canvas {
+      display: block;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .close-viewer {
+      display: inline-block;
+      margin-bottom: 16px;
+      padding: 8px 16px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--accent);
+      cursor: pointer;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+
+    .close-viewer:hover {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    .loading {
+      text-align: center;
+      color: var(--dim);
+      padding: 40px;
+    }
+
+    footer {
+      border-top: 1px solid var(--border); padding: 24px 0;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 11px; color: var(--dim);
+    }
+  </style>
+</head>
+<body>
+<div class="site-wrapper">
+  <header>
+    <h1 class="site-title">GUNKY<span>ZONE</span></h1>
+    <p class="site-subtitle">comics · stories · dispatches from somewhere</p>
+    <nav>
+      <a href="index.html">home</a>
+      <a href="comics.html" class="active">comics</a>
+      <a href="anecdotes.html">anecdotes</a>
+      <a href="chat.html">chat</a>
+      <a href="about.html">about</a>
+    </nav>
+  </header>
+
+  <main>
+    <div id="comics-list"></div>
+    <div id="pdf-viewer" style="display: none;">
+      <button class="close-viewer" onclick="closeViewer()">← Back to Comics</button>
+      <div class="pdf-viewer">
+        <div class="pdf-controls">
+          <span class="pdf-info">Zoom: <input type="range" id="zoom-slider" min="50" max="200" value="100" onchange="updateZoom()" style="width: 100px; vertical-align: middle;"> <span id="zoom-level">100</span>%</span>
+        </div>
+        <div class="pdf-viewer-container">
+          <div class="pdf-pages" id="pdf-pages"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <span>© 2025 gunkyzone · made with hand-typed html</span>
+  </footer>
+</div>
+
+<script>
+  window.FIREBASE_CONFIG = {
+    apiKey: "AIzaSyD1L4Mmgnbl0W7lk1rnaRu5wv61TSFhJqM",
+    authDomain: "gunkychat.firebaseapp.com",
+    databaseURL: "https://gunkychat-default-rtdb.firebaseio.com",
+    projectId: "gunkychat",
+    storageBucket: "gunkychat.firebasestorage.app",
+    messagingSenderId: "423489767287",
+    appId: "1:423489767287:web:ce847768781b0f589dc372",
+    measurementId: "G-W7VBG0GSV9"
+  };
+
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+  var currentPdf = null;
+  var currentPage = 1;
+  var totalPages = 0;
+  var mediaRef = null;
+  var zoomLevel = 100;
+
+  function loadComics() {
+    var comicsList = document.getElementById('comics-list');
+    comicsList.innerHTML = '<div class="loading">Loading comics...</div>';
+
+    // Fetch from Firebase via direct REST API call
+    var url = 'https://gunkychat-default-rtdb.firebaseio.com/media_metadata.json';
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.onload = function() {
+      if (xhr.status === 200) {
+        var data = JSON.parse(xhr.responseText);
+        var comics = [];
+        if (data && typeof data === 'object') {
+          Object.keys(data).forEach(function(key) {
+            var item = data[key];
+            if (item.category === 'comics') {
+              comics.push({
+                id: key,
+                data: item
+              });
+            }
+          });
+        }
+
+        if (comics.length === 0) {
+          comicsList.innerHTML = '<div class="loading">No comics uploaded yet</div>';
+          return;
+        }
+
+        comics.sort(function(a, b) {
+          return b.data.uploadedAt - a.data.uploadedAt;
+        });
+
+        var html = '<div class="comics-grid>';
+        comics.forEach(function(comic) {
+          html += '<div class="comic-card" onclick="openComic(\'' + comic.data.url.replace(/'/g, "\\'") + '\', \'' + comic.data.title.replace(/'/g, "\\'") + '\')">';
+          html += '<h3>' + comic.data.title + '</h3>';
+          html += '<p>' + comic.data.filename + '</p>';
+          html += '</div>';
+        });
+        html += '</div>';
+
+        comicsList.innerHTML = html;
+      } else {
+        comicsList.innerHTML = '<div class="loading">Error loading comics</div>';
+      }
+    };
+    xhr.onerror = function() {
+      comicsList.innerHTML = '<div class="loading">Error loading comics</div>';
+    };
+    xhr.send();
+  }
+
+  function openComic(url, title) {
+    document.getElementById('comics-list').style.display = 'none';
+    document.getElementById('pdf-viewer').style.display = 'block';
+    zoomLevel = 100;
+    document.getElementById('zoom-slider').value = 100;
+    document.getElementById('zoom-level').textContent = '100';
+
+    pdfjsLib.getDocument(url).promise.then(function(pdf) {
+      currentPdf = pdf;
+      totalPages = pdf.numPages;
+      renderAllPages();
+    }).catch(function(err) {
+      alert('Error loading PDF: ' + err.message);
+    });
+  }
+
+  function renderAllPages() {
+    var pagesContainer = document.getElementById('pdf-pages');
+    pagesContainer.innerHTML = '';
+
+    for (var pageNum = 1; pageNum <= totalPages; pageNum++) {
+      renderPage(pageNum, pagesContainer);
+    }
+  }
+
+  function renderPage(pageNum, container) {
+    if (!currentPdf) return;
+
+    currentPdf.getPage(pageNum).then(function(page) {
+      var scale = zoomLevel / 100;
+      var viewport = page.getViewport({ scale: scale });
+
+      var pageDiv = document.createElement('div');
+      pageDiv.className = 'pdf-page';
+      pageDiv.id = 'page-' + pageNum;
+
+      var canvas = document.createElement('canvas');
+      var context = canvas.getContext('2d');
+
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+
+      page.render({
+        canvasContext: context,
+        viewport: viewport
+      }).promise.then(function() {
+        pageDiv.appendChild(canvas);
+        container.appendChild(pageDiv);
+      });
+    });
+  }
+
+  function updateZoom() {
+    zoomLevel = parseInt(document.getElementById('zoom-slider').value);
+    document.getElementById('zoom-level').textContent = zoomLevel;
+    renderAllPages();
+  }
+
+  function closeViewer() {
+    currentPdf = null;
+    totalPages = 0;
+    document.getElementById('pdf-viewer').style.display = 'none';
+    document.getElementById('comics-list').style.display = 'block';
+  }
+
+  // Initialize Firebase
+  function initFirebase() {
+    loadComics();
+  }
+
+  initFirebase();
+</script>
+</body>
+</html>
