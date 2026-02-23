@@ -796,30 +796,12 @@
               firebase.initializeApp(window.FIREBASE_CONFIG);
               console.log('Firebase initialized');
               
-              firebase.auth().onAuthStateChanged(function(user) {
-                currentUser = user;
-                
-                if (user && 
-                    window.CHAT_ADMIN && 
-                    Array.isArray(window.CHAT_ADMIN.adminUIDs) && 
-                    window.CHAT_ADMIN.adminUIDs.indexOf(user.uid) !== -1) {
-                  
-                  isAdmin = true;
-                  localStorage.setItem('gunky_chat_is_admin', '1');
-                  if (adminBtn) adminBtn.title = 'Admin: sign out';
-                  console.info('Chat: admin authenticated', user.uid);
-                } else {
-                  isAdmin = false;
-                  localStorage.removeItem('gunky_chat_is_admin');
-                  if (adminBtn) adminBtn.title = 'Admin: sign in';
-                }
-                
-                renderMessages(loadLocal());
-              });
-
+              // Set up database listener FIRST
               firebaseRef = firebase.database().ref('/gunky_chat');
+              console.log('Firebase ref created:', firebaseRef.path);
               
               firebaseRef.on('value', function(snap) {
+                console.log('Firebase listener triggered');
                 var raw = snap.val() || {};
                 var list = [];
                 
@@ -857,9 +839,31 @@
                 }
                 
                 renderMessages(list);
+              }, function(err) {
+                console.error('Firebase listener error:', err);
               });
 
               console.info('Chat: Firebase realtime enabled');
+              
+              // Then set up auth listener
+              firebase.auth().onAuthStateChanged(function(user) {
+                currentUser = user;
+                
+                if (user && 
+                    window.CHAT_ADMIN && 
+                    Array.isArray(window.CHAT_ADMIN.adminUIDs) && 
+                    window.CHAT_ADMIN.adminUIDs.indexOf(user.uid) !== -1) {
+                  
+                  isAdmin = true;
+                  localStorage.setItem('gunky_chat_is_admin', '1');
+                  if (adminBtn) adminBtn.title = 'Admin: sign out';
+                  console.info('Chat: admin authenticated', user.uid);
+                } else {
+                  isAdmin = false;
+                  localStorage.removeItem('gunky_chat_is_admin');
+                  if (adminBtn) adminBtn.title = 'Admin: sign in';
+                }
+              });
               
             } catch(err) {
               console.warn('Chat: firebase init error', err);
