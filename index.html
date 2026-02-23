@@ -510,20 +510,47 @@
       catch(e) { return []; }
     }
 
+    function testLocalStorage() {
+      try {
+        localStorage.setItem('__test__', '1');
+        localStorage.removeItem('__test__');
+        return true;
+      } catch(e) {
+        console.warn('localStorage not available:', e);
+        return false;
+      }
+    }
+
+    var hasLocalStorage = testLocalStorage();
+    console.log('localStorage available:', hasLocalStorage);
+
     function loadLocal() {
+      if (!hasLocalStorage) return [];
       return safeParse(localStorage.getItem(KEY));
     }
 
     function saveLocal(msgs) {
+      if (!hasLocalStorage) return;
       try { localStorage.setItem(KEY, JSON.stringify(msgs)); }
       catch(e) { console.warn('localStorage save failed', e); }
     }
 
     function renderMessages(msgs) {
+      if (!Array.isArray(msgs)) msgs = [];
       messagesEl.innerHTML = '';
       
+      if (msgs.length === 0) {
+        var emptyMsg = document.createElement('div');
+        emptyMsg.style.color = 'var(--dim)';
+        emptyMsg.style.textAlign = 'center';
+        emptyMsg.style.padding = '20px';
+        emptyMsg.textContent = 'No messages yet. Be the first to say something!';
+        messagesEl.appendChild(emptyMsg);
+        return;
+      }
+      
       msgs.forEach(function(m) {
-        if (m.deleted) return;
+        if (!m || m.deleted) return;
 
         var wrap = document.createElement('div');
         wrap.className = 'chat-msg';
@@ -721,8 +748,14 @@
 
     function enableLocalMode() {
       console.info('Chat: using localStorage fallback');
-      renderMessages(loadLocal());
+      var msgs = loadLocal();
+      console.log('Loaded messages from localStorage:', msgs);
+      renderMessages(msgs);
     }
+
+    // Initial render from localStorage
+    console.log('Chat app initializing...');
+    renderMessages(loadLocal());
 
     if (!FORCE_LOCAL && window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.databaseURL) {
       function loadScript(src, cb) {
@@ -733,14 +766,19 @@
           console.error('Failed to load script:', src);
           enableLocalMode();
         };
+        s.async = true;
         document.head.appendChild(s);
       }
 
       loadScript('https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js', function() {
+        console.log('Firebase app loaded');
         loadScript('https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js', function() {
+          console.log('Firebase auth loaded');
           loadScript('https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js', function() {
+            console.log('Firebase database loaded');
             try {
               firebase.initializeApp(window.FIREBASE_CONFIG);
+              console.log('Firebase initialized');
               
               firebase.auth().onAuthStateChanged(function(user) {
                 currentUser = user;
@@ -821,32 +859,35 @@
         localStorage.setItem('gunky_chat_name_color', chosenColor);
       } catch(e) {}
       
-      if (!text) return;
+      if (!text) {
+        alert('Please enter a message');
+        return;
+      }
       
       var tsVal = Date.now();
       lastSentTs = tsVal;
       
+      var msgObj = {
+        author: name,
+        text: text,
+        ts: tsVal,
+        color: chosenColor
+      };
+      
       if (firebaseRef) {
+        console.log('Sending to Firebase:', msgObj);
         try {
-          firebaseRef.push({
-            author: name,
-            text: text,
-            ts: tsVal,
-            color: chosenColor
-          });
+          firebaseRef.push(msgObj);
           textIn.value = '';
+          console.log('Message sent to Firebase');
         } catch(e) {
           console.warn('Chat: firebase write failed', e);
           alert('Failed to send message: ' + e.message);
         }
       } else {
+        console.log('Firebase not available, saving locally:', msgObj);
         var msgs = loadLocal();
-        msgs.push({
-          author: name,
-          text: text,
-          ts: tsVal,
-          color: chosenColor
-        });
+        msgs.push(msgObj);
         
         if (msgs.length > MAX) {
           msgs.splice(0, msgs.length - MAX);
@@ -855,6 +896,7 @@
         saveLocal(msgs);
         textIn.value = '';
         renderMessages(msgs);
+        console.log('Message saved locally');
       }
     });
 
