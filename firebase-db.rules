@@ -1,0 +1,10 @@
+{
+  "rules": {
+    "gunky_chat": {
+      ".read": true,
+      "$msgId": {
+        ".write": "(!data.exists() && newData.exists() && newData.child('author').exists() && newData.child('text').exists() && newData.child('ts').exists()) || auth != null"
+      }
+    }
+  }
+}
