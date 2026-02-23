@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GunkyZone — chat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #060606; --bg2: #0d0d0d; --bg3: #131313;
+      --border: #2a1a1a; --dim: #5a3a3a; --text: #d4c0c0;
+      --accent: #9b0000; --accent2: #cc0000;
+      --font-mono: 'Share Tech Mono', monospace;
+      --font-body: 'IM Fell English', serif;
+    }
+    html, body { height: 100%; }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: var(--font-mono); font-size: 14px; line-height: 1.6;
+      display: flex; flex-direction: column;
+    }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background: repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(0,0,0,0.18) 2px, rgba(0,0,0,0.18) 4px);
+      pointer-events: none; z-index: 1000;
+    }
+
+    .chat-header {
+      border-bottom: 1px solid var(--border); padding: 10px 16px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--bg2); flex-shrink: 0;
+    }
+    .chat-title { font-size: 13px; letter-spacing: 3px; text-transform: uppercase; color: var(--accent2); }
+    .chat-status { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--dim); }
+    .chat-status.live { color: var(--accent2); }
+    .chat-status.live::before { content: '● '; font-size: 8px; }
+    .chat-status.err { color: #884444; }
+
+    .chat-messages {
+      flex: 1; overflow-y: auto; padding: 14px 16px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .chat-messages::-webkit-scrollbar { width: 4px; }
+    .chat-messages::-webkit-scrollbar-thumb { background: var(--border); }
+
+    .chat-msg { display: flex; flex-direction: column; gap: 3px; }
+    .chat-author { font-size: 11px; letter-spacing: 1px; display: flex; align-items: center; gap: 6px; }
+    .chat-ts { font-size: 10px; color: var(--dim); letter-spacing: 0; }
+    .chat-text { font-family: var(--font-body); font-size: 14px; color: var(--text); line-height: 1.6; word-break: break-word; }
+    .chat-empty { font-family: var(--font-body); font-style: italic; color: var(--dim); font-size: 13px; }
+
+    .chat-form {
+      border-top: 1px solid var(--border); padding: 10px 14px;
+      display: flex; gap: 7px; align-items: center;
+      background: var(--bg3); flex-shrink: 0;
+    }
+    .chat-form input[type="text"] {
+      background: var(--bg); border: 1px solid var(--border);
+      color: var(--text); font-family: var(--font-mono); font-size: 13px;
+      padding: 7px 10px; outline: none; transition: border-color 0.15s; caret-color: var(--accent2);
+    }
+    .chat-form input[type="text"]:focus { border-color: var(--accent); }
+    #chat-name { width: 100px; flex-shrink: 0; }
+    #chat-text { flex: 1; min-width: 0; }
+    .chat-form input[type="submit"] {
+      background: var(--accent); border: none; color: #fff;
+      font-family: var(--font-mono); font-size: 11px; letter-spacing: 2px;
+      text-transform: uppercase; padding: 7px 14px; cursor: pointer;
+      transition: background 0.15s; flex-shrink: 0;
+    }
+    .chat-form input[type="submit"]:hover { background: var(--accent2); }
+    .chat-form input[type="submit"]:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .color-wrap { position: relative; flex-shrink: 0; }
+    #chat-color-btn {
+      background: var(--bg); border: 1px solid var(--border);
+      padding: 5px; cursor: pointer; display: block; transition: border-color 0.15s;
+    }
+    #chat-color-btn:hover { border-color: var(--accent); }
+    #chat-color-swatch { display: block; width: 15px; height: 15px; border-radius: 50%; }
+    #chat-color-popup {
+      position: absolute; bottom: calc(100% + 6px); left: 0;
+      background: var(--bg2); border: 1px solid var(--border);
+      padding: 10px; z-index: 50; min-width: 170px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    }
+    .color-swatches { display: flex; gap: 5px; margin-bottom: 8px; flex-wrap: wrap; }
+    .swatch { width: 20px; height: 20px; border: 1px solid var(--border); cursor: pointer; border-radius: 50%; transition: transform 0.1s; }
+    .swatch:hover { transform: scale(1.2); border-color: var(--text); }
+    .color-controls { display: flex; gap: 7px; align-items: center; }
+    #chat-color-native { width: 32px; height: 26px; padding: 2px; border: 1px solid var(--border); background: var(--bg); cursor: pointer; }
+    .color-done-btn {
+      background: var(--accent); border: 1px solid var(--accent); color: #fff;
+      font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px;
+      text-transform: uppercase; padding: 4px 9px; cursor: pointer;
+    }
+    .color-done-btn:hover { background: var(--accent2); }
+
+    .note { padding: 7px 16px; border-top: 1px solid var(--border); font-size: 10px; color: var(--dim); font-family: var(--font-body); font-style: italic; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+
+  <div class="chat-header">
+    <div class="chat-title">~ chat ~</div>
+    <div class="chat-status" id="chat-status">connecting...</div>
+  </div>
+
+  <div class="chat-messages" id="chat-messages">
+    <div class="chat-empty">loading...</div>
+  </div>
+
+  <form id="chat-form" class="chat-form">
+    <div class="color-wrap">
+      <button type="button" id="chat-color-btn" title="Choose name colour">
+        <span id="chat-color-swatch" style="background:#cc0000;"></span>
+      </button>
+      <div id="chat-color-popup" style="display:none;">
+        <div class="color-swatches">
+          <button type="button" class="swatch" data-color="#cc0000" style="background:#cc0000;"></button>
+          <button type="button" class="swatch" data-color="#ff8a00" style="background:#ff8a00;"></button>
+          <button type="button" class="swatch" data-color="#ffd166" style="background:#ffd166;"></button>
+          <button type="button" class="swatch" data-color="#8affc1" style="background:#8affc1;"></button>
+          <button type="button" class="swatch" data-color="#66b2ff" style="background:#66b2ff;"></button>
+          <button type="button" class="swatch" data-color="#d39bff" style="background:#d39bff;"></button>
+          <button type="button" class="swatch" data-color="#d4c0c0" style="background:#d4c0c0;"></button>
+        </div>
+        <div class="color-controls">
+          <input id="chat-color-native" type="color" value="#cc0000">
+          <button type="button" id="chat-color-close" class="color-done-btn">done</button>
+        </div>
+      </div>
+    </div>
+    <input type="text" id="chat-name" placeholder="name" maxlength="24" autocomplete="off">
+    <input type="text" id="chat-text" placeholder="say something…" maxlength="500" autocomplete="off">
+    <input type="submit" value="send" id="chat-submit">
+  </form>
+  <p class="note">be cool. messages are public and live.</p>
+
+<script>
+(function(){
+  'use strict';
+
+  var DB_URL  = 'https://gunkychat-default-rtdb.firebaseio.com';
+  var DB_PATH = '/gunky_chat';
+  var POLL_MS = 4000;
+  var MAX     = 200;
+  var DEFAULT_COLOR = '#cc0000';
+
+  var messagesEl  = document.getElementById('chat-messages');
+  var form        = document.getElementById('chat-form');
+  var nameIn      = document.getElementById('chat-name');
+  var textIn      = document.getElementById('chat-text');
+  var submitBtn   = document.getElementById('chat-submit');
+  var statusEl    = document.getElementById('chat-status');
+  var colorNative = document.getElementById('chat-color-native');
+  var colorBtn    = document.getElementById('chat-color-btn');
+  var colorPopup  = document.getElementById('chat-color-popup');
+  var colorSwatch = document.getElementById('chat-color-swatch');
+  var colorClose  = document.getElementById('chat-color-close');
+
+  function setStatus(text, cls) {
+    statusEl.textContent = text;
+    statusEl.className = 'chat-status' + (cls ? ' ' + cls : '');
+  }
+
+  function formatTime(ts) {
+    try {
+      var d = new Date(ts);
+      return d.toLocaleDateString([], {month:'short', day:'numeric'})
+           + ' ' + d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    } catch(e) { return ''; }
+  }
+
+  function renderMessages(list) {
+    if (!list.length) {
+      messagesEl.innerHTML = '<div class="chat-empty">no messages yet — say something!</div>';
+      return;
+    }
+    var atBottom = messagesEl.scrollHeight - messagesEl.scrollTop <= messagesEl.clientHeight + 60;
+    messagesEl.innerHTML = '';
+    list.forEach(function(m) {
+      var wrap   = document.createElement('div');
+      wrap.className = 'chat-msg';
+      var author = document.createElement('div');
+      author.className = 'chat-author';
+      author.textContent = (m.author || 'anon').slice(0, 24);
+      if (m.color) author.style.color = m.color;
+      var ts = document.createElement('span');
+      ts.className = 'chat-ts';
+      ts.textContent = ' — ' + formatTime(m.ts);
+      author.appendChild(ts);
+      var text = document.createElement('div');
+      text.className = 'chat-text';
+      text.textContent = (m.text || '').slice(0, 500);
+      wrap.appendChild(author);
+      wrap.appendChild(text);
+      messagesEl.appendChild(wrap);
+    });
+    if (atBottom) messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function fetchMessages() {
+    fetch(DB_URL + DB_PATH + '.json?orderBy="ts"&limitToLast=' + MAX)
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function(data) {
+        var list = [];
+        if (data && typeof data === 'object') {
+          Object.keys(data).forEach(function(k) {
+            var m = data[k];
+            if (m && m.text && m.ts) list.push(m);
+          });
+        }
+        list.sort(function(a,b){ return (a.ts||0) - (b.ts||0); });
+        renderMessages(list);
+        setStatus('live', 'live');
+      })
+      .catch(function(err) { console.warn('fetch error:', err); setStatus('error', 'err'); });
+  }
+
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    var name  = (nameIn.value || '').trim() || 'anon';
+    var text  = (textIn.value || '').trim();
+    if (!text) return;
+    var color = (colorNative && colorNative.value)
+              || localStorage.getItem('gunky_chat_name_color')
+              || DEFAULT_COLOR;
+    try { localStorage.setItem('gunky_chat_name_color', color); } catch(x){}
+    submitBtn.disabled = true;
+    textIn.disabled    = true;
+    fetch(DB_URL + DB_PATH + '.json', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ author: name, text: text, ts: Date.now(), color: color })
+    })
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      textIn.value = '';
+      submitBtn.disabled = false;
+      textIn.disabled    = false;
+      textIn.focus();
+      fetchMessages();
+    })
+    .catch(function(err) {
+      console.warn('send error:', err);
+      submitBtn.disabled = false;
+      textIn.disabled    = false;
+      setStatus('send failed', 'err');
+      setTimeout(function(){ setStatus('live', 'live'); }, 3000);
+    });
+  });
+
+  if (colorBtn && colorPopup && colorNative && colorSwatch && colorClose) {
+    colorBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      colorPopup.style.display = colorPopup.style.display === 'block' ? 'none' : 'block';
+    });
+    colorPopup.querySelectorAll('.swatch').forEach(function(s) {
+      s.addEventListener('click', function() {
+        var c = s.getAttribute('data-color');
+        if (!c) return;
+        colorNative.value = c;
+        colorSwatch.style.background = c;
+      });
+    });
+    colorNative.addEventListener('input', function() { colorSwatch.style.background = colorNative.value; });
+    colorClose.addEventListener('click', function() {
+      colorPopup.style.display = 'none';
+      try { localStorage.setItem('gunky_chat_name_color', colorNative.value); } catch(x){}
+    });
+    document.addEventListener('click', function(e) {
+      if (!colorPopup.contains(e.target) && e.target !== colorBtn) colorPopup.style.display = 'none';
+    });
+    var saved = localStorage.getItem('gunky_chat_name_color');
+    if (saved) { colorNative.value = saved; colorSwatch.style.background = saved; }
+  }
+
+  var savedName = localStorage.getItem('gunky_chat_name');
+  if (savedName) nameIn.value = savedName;
+  nameIn.addEventListener('input', function() {
+    try { localStorage.setItem('gunky_chat_name', nameIn.value); } catch(x){}
+  });
+
+  fetchMessages();
+  setInterval(fetchMessages, POLL_MS);
+})();
+</script>
+</body>
+</html>
