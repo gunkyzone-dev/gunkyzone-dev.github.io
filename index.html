@@ -823,6 +823,8 @@
                 var raw = snap.val() || {};
                 var list = [];
                 
+                console.log('Firebase snapshot received:', raw);
+                
                 if (Array.isArray(raw)) {
                   list = raw.map(function(v, i) {
                     v._key = i;
@@ -835,6 +837,13 @@
                     return v;
                   });
                 }
+                
+                // Sort by timestamp
+                list.sort(function(a, b) {
+                  return (a.ts || 0) - (b.ts || 0);
+                });
+                
+                console.log('Processed messages:', list);
                 
                 try {
                   var plain = list.map(function(m) {
