@@ -1,4 +1,3 @@
-
 window.FIREBASE_CONFIG = {
   apiKey: "AIzaSyD1L4Mmgnbl0W7lk1rnaRu5wv61TSFhJqM",
   authDomain: "gunkychat.firebaseapp.com",
