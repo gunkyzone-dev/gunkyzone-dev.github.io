@@ -106,7 +106,8 @@
     main { padding: 40px 0 80px; }
 
     .comics-grid {
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
       gap: 24px;
       margin-bottom: 40px;
     }
@@ -118,9 +119,7 @@
       cursor: pointer;
       transition: all 0.3s;
       overflow: hidden;
-      width: 140px;
       height: 200px;
-      flex-shrink: 0;
       display: flex;
       flex-direction: column;
     }
@@ -335,21 +334,20 @@
           return b.uploadedAt - a.uploadedAt;
         });
 
-        var html = '<div class="comics-grid>';
+        var html = '<div class="comics-grid">';
         comics.forEach(function(comic, idx) {
           html += '<div class="comic-card" onclick="openComic(\'' + comic.url.replace(/'/g, "\\'") + '\', \'' + comic.title.replace(/'/g, "\\'") + '\')">';
-          html += '<div id="thumb-' + idx + '" style="width: 100%; height: 150px; background: var(--bg3); display: flex; align-items: center; justify-content: center; color: var(--dim); font-size: 10px; overflow: hidden;"></div>';
+          if (comic.thumbnail) {
+            html += '<div class="comic-thumb"><img src="' + comic.thumbnail + '" alt="' + comic.title + '" style="width: 100%; height: 100%; object-fit: cover;"></div>';
+          } else {
+            html += '<div id="thumb-' + idx + '" style="width: 100%; height: 150px; background: var(--bg3); display: flex; align-items: center; justify-content: center; color: var(--dim); font-size: 10px; overflow: hidden;"></div>';
+          }
           html += '<h3>' + comic.title + '</h3>';
           html += '</div>';
         });
         html += '</div>';
 
         comicsList.innerHTML = html;
-
-        // Generate thumbnails from first page of each PDF
-        comics.forEach(function(comic, idx) {
-          generateThumbnail(comic.url, idx);
-        });
       })
       .catch(function(err) {
         console.error('Error loading comics:', err);
