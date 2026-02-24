@@ -309,15 +309,8 @@
     var img = document.getElementById('lightbox-image');
     img.src = currentImages[index].url;
     img.classList.remove('zoomed');
+    img.style.transform = 'scale(1)';
     lightbox.classList.add('active');
-    
-    // Scale down if image is larger than viewport
-    img.onload = function() {
-      var maxWidth = window.innerWidth * 0.9;
-      var maxHeight = window.innerHeight * 0.9;
-      var scale = Math.min(maxWidth / img.naturalWidth, maxHeight / img.naturalHeight, 1);
-      img.style.transform = 'scale(' + scale + ')';
-    };
   }
 
   function closeLightbox() {
@@ -326,18 +319,7 @@
   }
 
   function toggleZoom(event) {
-    var img = event.target;
-    if (img.classList.contains('zoomed')) {
-      img.classList.remove('zoomed');
-      // Reset to fitted scale
-      var maxWidth = window.innerWidth * 0.9;
-      var maxHeight = window.innerHeight * 0.9;
-      var scale = Math.min(maxWidth / img.naturalWidth, maxHeight / img.naturalHeight, 1);
-      img.style.transform = 'scale(' + scale + ')';
-    } else {
-      img.classList.add('zoomed');
-      img.style.transform = 'scale(1.2)';
-    }
+    event.target.classList.toggle('zoomed');
   }
 
   // Initialize Firebase
