@@ -7,6 +7,11 @@
   <title>GunkyZone Chat</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+  <script>
+    if (window.location.search.includes('chat-only')) {
+      document.documentElement.classList.add('chat-only');
+    }
+  </script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -125,6 +130,24 @@
     nav a:last-child { border-right: none; }
     nav a:hover { background: var(--bg3); color: var(--accent); text-decoration: none; }
     nav a.active { background: var(--bg3); color: var(--accent); }
+
+    html.chat-only header {
+      display: none;
+    }
+
+    html.chat-only .site-wrapper {
+      padding: 20px;
+      height: auto;
+    }
+
+    body.chat-only header {
+      display: none;
+    }
+
+    body.chat-only .site-wrapper {
+      padding: 20px;
+      height: auto;
+    }
 
     /* ─── CHAT ROOM ────────────────────────────── */
     .chat-room {
