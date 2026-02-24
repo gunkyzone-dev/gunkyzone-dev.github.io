@@ -1,10 +1,10 @@
 {
   "comics": [
-    {"title": "TEAR1", "url": "/comics/TEAR1_compressed.pdf", "uploadedAt": 1740355200000},
-    {"title": "TEAR2", "url": "/comics/TEAR2_compressed.pdf", "uploadedAt": 1740441600000}
+    {"title": "TEAR1", "url": "/comics/TEAR1_compressed.pdf", "thumbnail": "/thumbnails/TEAR1_thumb.jpg", "uploadedAt": 1740355200000},
+    {"title": "TEAR2", "url": "/comics/TEAR2_compressed.pdf", "thumbnail": "/thumbnails/TEAR2_thumb.jpg", "uploadedAt": 1740441600000}
   ],
   "drawings": [
-    {"title": "The Gunky One", "url": "/drawings/closed mouth open eye.png", "uploadedAt": 1740268800000}
+    {"title": "Closed Mouth Open Eye", "url": "/drawings/closed mouth open eye.png", "uploadedAt": 1740268800000}
   ],
   "stories": [],
   "gallery": []
