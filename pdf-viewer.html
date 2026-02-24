@@ -99,7 +99,6 @@
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      align-items: center;
       padding: 20px;
       gap: 20px;
     }
@@ -107,21 +106,25 @@
     .pdf-pages {
       display: flex;
       flex-direction: column;
-      align-items: center;
       gap: 20px;
       width: 100%;
+      align-items: center;
     }
 
     .pdf-page {
       border: 1px solid #2a1a1a;
       border-radius: 4px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-      background: white;
+      background: #000;
+      margin: 0 auto;
+      flex-shrink: 0;
+      width: 100%;
+      transition: max-width 0.2s ease;
     }
 
     .pdf-page canvas {
       display: block;
-      max-width: 100%;
+      width: 100%;
       height: auto;
     }
 
@@ -139,6 +142,26 @@
       background: #0a0a0a;
       padding: 40px 20px;
     }
+
+    .fullscreen-back-btn {
+      display: none;
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 1000;
+      background: #131313;
+      color: #9b0000;
+      border: 1px solid #2a1a1a;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 14px;
+      border-radius: 4px;
+    }
+
+    .viewer-container:fullscreen .fullscreen-back-btn {
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -153,7 +176,10 @@
   </div>
 
   <div class="viewer-container" id="viewer-container">
-    <div class="loading">Loading PDF...</div>
+    <button class="fullscreen-back-btn" onclick="toggleFullscreen()">< EXIT FULLSCREEN</button>
+    <div id="pdf-content">
+      <div class="loading">Loading PDF...</div>
+    </div>
   </div>
 
   <script>
@@ -163,6 +189,7 @@
     var totalPages = 0;
     var zoomLevel = 100;
     var pdfUrl = null;
+    var pageObserver = null;
 
     // Get PDF URL from query parameter
     function getPdfUrl() {
@@ -172,8 +199,8 @@
 
     function loadPdf(url) {
       pdfUrl = url;
-      var container = document.getElementById('viewer-container');
-      container.innerHTML = '<div class="loading">Loading PDF...</div>';
+      var content = document.getElementById('pdf-content');
+      content.innerHTML = '<div class="loading">Loading PDF...</div>';
 
       pdfjsLib.getDocument(url).promise.then(function(pdf) {
         currentPdf = pdf;
@@ -181,46 +208,85 @@
         document.getElementById('page-count').textContent = totalPages;
         renderAllPages();
       }).catch(function(err) {
-        container.innerHTML = '<div class="loading">Error loading PDF: ' + err.message + '</div>';
+        content.innerHTML = '<div class="loading">Error loading PDF: ' + err.message + '</div>';
       });
     }
 
     function renderAllPages() {
-      var container = document.getElementById('viewer-container');
-      container.innerHTML = '';
+      var content = document.getElementById('pdf-content');
+      content.innerHTML = '';
 
       var pagesDiv = document.createElement('div');
       pagesDiv.className = 'pdf-pages';
+      pagesDiv.id = 'pdf-pages-container';
 
-      for (var pageNum = 1; pageNum <= totalPages; pageNum++) {
-        renderPage(pageNum, pagesDiv);
+      if (pageObserver) {
+        pageObserver.disconnect();
       }
 
-      container.appendChild(pagesDiv);
+      pageObserver = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+          if (entry.isIntersecting) {
+            var pageDiv = entry.target;
+            if (!pageDiv.dataset.rendered) {
+              renderPageContent(pageDiv);
+            }
+            // Update current page number based on what's visible
+            if (entry.intersectionRatio > 0.1) {
+               document.getElementById('page-num').textContent = pageDiv.dataset.pageNum;
+            }
+          }
+        });
+      }, { root: document.getElementById('viewer-container'), rootMargin: '800px 0px', threshold: [0.1] });
+
+      for (var pageNum = 1; pageNum <= totalPages; pageNum++) {
+        createPagePlaceholder(pageNum, pagesDiv);
+      }
+
+      content.appendChild(pagesDiv);
     }
 
-    function renderPage(pageNum, container) {
-      if (!currentPdf) return;
+    function createPagePlaceholder(pageNum, container) {
+      var pageDiv = document.createElement('div');
+      pageDiv.className = 'pdf-page';
+      pageDiv.dataset.pageNum = pageNum;
+      pageDiv.dataset.rendered = '';
+      pageDiv.innerHTML = '<div class="loading" style="padding: 40px;">Loading page ' + pageNum + '...</div>';
+      
+      pageDiv.style.minHeight = '800px';
+      pageDiv.style.maxWidth = (800 * zoomLevel / 100) + 'px';
+      pageDiv.style.display = 'flex';
+      pageDiv.style.justifyContent = 'center';
+      pageDiv.style.alignItems = 'center';
+
+      container.appendChild(pageDiv);
+      pageObserver.observe(pageDiv);
+    }
+
+    function renderPageContent(pageDiv) {
+      var pageNum = parseInt(pageDiv.dataset.pageNum);
+      pageDiv.dataset.rendered = 'true';
 
       currentPdf.getPage(pageNum).then(function(page) {
-        var scale = zoomLevel / 100;
-        var viewport = page.getViewport({ scale: scale });
-
-        var pageDiv = document.createElement('div');
-        pageDiv.className = 'pdf-page';
+        // Render at a higher scale for better quality when zoomed in
+        var renderScale = 1.5; 
+        var viewport = page.getViewport({ scale: renderScale });
 
         var canvas = document.createElement('canvas');
         var context = canvas.getContext('2d');
 
         canvas.width = viewport.width;
         canvas.height = viewport.height;
+        
+        pageDiv.style.minHeight = 'auto';
+        pageDiv.style.display = 'block';
+        pageDiv.innerHTML = ''; // Clear loading text
 
         page.render({
           canvasContext: context,
           viewport: viewport
         }).promise.then(function() {
           pageDiv.appendChild(canvas);
-          container.appendChild(pageDiv);
         });
       });
     }
@@ -228,7 +294,12 @@
     function updateZoom() {
       zoomLevel = parseInt(document.getElementById('zoom-slider').value);
       document.getElementById('zoom-level').textContent = zoomLevel;
-      renderAllPages();
+      
+      var newMaxWidth = (800 * zoomLevel / 100) + 'px';
+      var pages = document.getElementsByClassName('pdf-page');
+      for (var i = 0; i < pages.length; i++) {
+        pages[i].style.maxWidth = newMaxWidth;
+      }
     }
 
     function nextPage() {
@@ -258,7 +329,7 @@
       if (url) {
         loadPdf(url);
       } else {
-        document.getElementById('viewer-container').innerHTML = '<div class="loading">No PDF URL provided</div>';
+        document.getElementById('pdf-content').innerHTML = '<div class="loading">No PDF URL provided</div>';
       }
     });
   </script>
