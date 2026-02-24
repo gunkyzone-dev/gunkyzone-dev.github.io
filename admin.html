@@ -282,21 +282,21 @@
       <div class="form-group">
         <label>Upload File</label>
         <input type="file" id="media-file" style="width: 100%; padding: 10px; border: 1px solid var(--border); background: var(--bg3); color: var(--text); border-radius: 4px;">
-        <p style="font-size: 11px; color: var(--dim); margin-top: 6px;">Upload to Neocities manually, then paste the file path below</p>
+        <p style="font-size: 11px; color: var(--dim); margin-top: 6px;">Upload files to GitHub repo in /comics/ or /drawings/ folders, then add the path below</p>
       </div>
 
       <div class="form-group">
-        <label>File Path (e.g., /comics/chapter1.pdf)</label>
+        <label>File Path (e.g., /comics/chapter1.pdf or /drawings/sketch.png)</label>
         <input type="text" id="media-path" placeholder="/comics/filename.pdf" style="width: 100%; padding: 10px; border: 1px solid var(--border); background: var(--bg3); color: var(--text); font-family: var(--font-mono); border-radius: 4px;">
       </div>
 
       <div class="form-group">
-        <label>File Title (optional)</label>
+        <label>File Title</label>
         <input type="text" id="media-title" placeholder="e.g., Chapter 1, Summer Sketch">
       </div>
 
       <div class="button-group">
-        <button onclick="uploadMedia()">Upload File</button>
+        <button onclick="addMediaEntry()">Add to media.json</button>
       </div>
 
       <div style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 16px;">
@@ -410,7 +410,7 @@
     });
   }
 
-  function uploadMedia() {
+  function addMediaEntry() {
     var category = document.getElementById('media-category').value;
     var title = document.getElementById('media-title').value || 'Untitled';
     var filePath = document.getElementById('media-path').value.trim();
@@ -424,36 +424,22 @@
       filePath = '/' + filePath;
     }
 
-    showMediaStatus('Adding file...', 'success');
+    showMediaStatus('Entry added! Remember to push to GitHub.', 'success');
 
-    // Fetch current media.json
-    fetch('/media.json')
-      .then(function(res) { return res.json(); })
-      .then(function(data) {
-        // Add new item
-        var newItem = {
-          title: title,
-          filename: filePath.split('/').pop(),
-          url: filePath,
-          uploadedAt: Date.now()
-        };
+    // Create entry object
+    var newItem = {
+      title: title,
+      filename: filePath.split('/').pop(),
+      url: filePath,
+      uploadedAt: Date.now()
+    };
 
-        if (!data[category]) data[category] = [];
-        data[category].push(newItem);
-
-        // Save back to Firebase (for backup)
-        if (mediaRef) {
-          mediaRef.child(Date.now()).set(newItem);
-        }
-
-        showMediaStatus('File added successfully!', 'success');
-        document.getElementById('media-path').value = '';
-        document.getElementById('media-title').value = '';
-        loadMediaList();
-      })
-      .catch(function(err) {
-        showMediaStatus('Error: ' + err.message, 'error');
-      });
+    // Log for user to copy
+    console.log('Add this to media.json:', JSON.stringify(newItem, null, 2));
+    
+    document.getElementById('media-path').value = '';
+    document.getElementById('media-title').value = '';
+    loadMediaList();
   }
 
   function loadMediaList() {
@@ -467,7 +453,7 @@
         var files = data[category] || [];
 
         if (files.length === 0) {
-          mediaList.innerHTML = '<p style="color: var(--dim);">No files uploaded yet</p>';
+          mediaList.innerHTML = '<p style="color: var(--dim);">No files in this category yet</p>';
           return;
         }
 
@@ -477,42 +463,25 @@
           item.style.cssText = 'padding: 12px; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;';
           
           var info = document.createElement('div');
-          info.innerHTML = '<div style="font-size: 13px; color: var(--text);">' + file.title + '</div><div style="font-size: 11px; color: var(--dim);">' + file.filename + '</div>';
+          info.innerHTML = '<div style="font-size: 13px; color: var(--text);">' + file.title + '</div><div style="font-size: 11px; color: var(--dim);">' + file.url + '</div>';
           
-          var deleteBtn = document.createElement('button');
-          deleteBtn.textContent = 'Delete';
-          deleteBtn.className = 'secondary';
-          deleteBtn.style.padding = '6px 12px';
-          deleteBtn.onclick = function() {
-            if (confirm('Delete this file?')) {
-              deleteMedia(category, idx);
-            }
+          var copyBtn = document.createElement('button');
+          copyBtn.textContent = 'Copy';
+          copyBtn.className = 'secondary';
+          copyBtn.style.padding = '6px 12px';
+          copyBtn.onclick = function() {
+            var entry = JSON.stringify(file);
+            navigator.clipboard.writeText(entry);
+            showMediaStatus('Entry copied to clipboard!', 'success');
           };
 
           item.appendChild(info);
-          item.appendChild(deleteBtn);
+          item.appendChild(copyBtn);
           mediaList.appendChild(item);
         });
       })
       .catch(function(err) {
         mediaList.innerHTML = '<p style="color: var(--dim);">Error loading files: ' + err.message + '</p>';
-      });
-  }
-
-  function deleteMedia(category, idx) {
-    fetch('/media.json')
-      .then(function(res) { return res.json(); })
-      .then(function(data) {
-        if (data[category]) {
-          data[category].splice(idx, 1);
-          // Note: You'll need to manually update media.json on Neocities
-          // For now, just show success
-          showMediaStatus('File removed from list (update media.json manually)', 'success');
-          loadMediaList();
-        }
-      })
-      .catch(function(err) {
-        showMediaStatus('Error deleting: ' + err.message, 'error');
       });
   }
 
