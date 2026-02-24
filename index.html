@@ -7,8 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
   <link rel="preload" href="/media.json" as="fetch" crossorigin>
-  <link rel="preload" href="/thumbnails/TEAR1_thumb.jpg" as="image">
-  <link rel="preload" href="/thumbnails/TEAR2_thumb.jpg" as="image">
+  <link rel="preload" href="/thumbnails/TEAR1_THUMB.png" as="image">
+  <link rel="preload" href="/thumbnails/TEAR2_THUMB.png" as="image">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -55,15 +55,40 @@
     }
 
     @keyframes crtBoot {
-      0% { filter: brightness(1.05); opacity: 1; box-shadow: inset 0 0 100px 50px rgba(255, 255, 255, 0.08); }
-      15% { box-shadow: inset 0 0 80px 40px rgba(255, 255, 255, 0.06); }
-      25% { filter: brightness(1.03); opacity: 1; box-shadow: inset 0 0 40px 20px rgba(255, 255, 255, 0.04); }
-      50% { filter: brightness(1.01); opacity: 0.98; clip-path: inset(40vh 0 40vh 0); box-shadow: none; }
-      75% { opacity: 0.99; clip-path: inset(10vh 0 10vh 0); }
-      100% { filter: brightness(1); opacity: 1; clip-path: inset(0 0 0 0); box-shadow: none; }
+      0% {
+        filter: brightness(1.05);
+        opacity: 1;
+        box-shadow: inset 0 0 100px 50px rgba(255, 255, 255, 0.08);
+      }
+      15% {
+        box-shadow: inset 0 0 80px 40px rgba(255, 255, 255, 0.06);
+      }
+      25% {
+        filter: brightness(1.03);
+        opacity: 1;
+        box-shadow: inset 0 0 40px 20px rgba(255, 255, 255, 0.04);
+      }
+      50% {
+        filter: brightness(1.01);
+        opacity: 0.98;
+        clip-path: inset(40vh 0 40vh 0);
+        box-shadow: none;
+      }
+      75% {
+        opacity: 0.99;
+        clip-path: inset(10vh 0 10vh 0);
+      }
+      100% {
+        filter: brightness(1);
+        opacity: 1;
+        clip-path: inset(0 0 0 0);
+        box-shadow: none;
+      }
     }
 
-    body { animation: crtBoot 1s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    body {
+      animation: crtBoot 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
 
     header { border-bottom: 1px solid var(--border); padding: 48px 0 32px; }
     .header-tag { font-size: 11px; color: var(--dim); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 12px; }
@@ -78,9 +103,14 @@
       animation: blink 1.1s step-end infinite;
     }
     @keyframes blink { 50% { opacity: 0; } }
-    @keyframes slideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
     .site-subtitle { font-family: var(--font-body); font-style: italic; color: var(--dim); font-size: 14px; margin-top: 10px; animation: slideIn 0.8s ease-out 0.3s both; }
 
     nav { display: flex; margin-top: 28px; border: 1px solid var(--border); width: fit-content; }
@@ -96,61 +126,229 @@
     main { padding: 40px 0 80px; }
 
     .welcome-box {
-      border: 1px solid var(--border); padding: 24px 28px;
+      border: 1px solid var(--border);
+      padding: 24px 28px;
       background: linear-gradient(180deg, var(--bg2), #0b0b0b);
-      margin-bottom: 36px; position: relative; border-radius: 6px;
+      margin-bottom: 36px;
+      position: relative;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+      border-radius: 6px;
       animation: fadeInUp 0.8s ease-out 0.5s both;
     }
-    .welcome-box::before { content: '//'; position: absolute; top: -1px; left: 16px; background: var(--bg2); padding: 0 6px; font-size: 11px; color: var(--accent); }
-    .welcome-box p { font-family: var(--font-body); font-size: 15px; color: var(--text); line-height: 1.9; }
+    .welcome-box::before {
+      content: '//';
+      position: absolute;
+      top: -1px; left: 16px;
+      background: var(--bg2);
+      padding: 0 6px;
+      font-size: 11px;
+      color: var(--accent);
+    }
+    .welcome-box p {
+      font-family: var(--font-body);
+      font-size: 15px;
+      color: var(--text);
+      line-height: 1.9;
+    }
 
     .section-label {
-      font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--dim);
-      margin-bottom: 16px; display: flex; align-items: center; gap: 10px;
+      font-size: 10px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: slideIn 0.6s ease-out forwards;
     }
-    .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-
-    .featured-item {
-      border: 2px solid var(--accent); padding: 20px;
-      background: linear-gradient(135deg, rgba(155, 0, 0, 0.1), transparent);
-      border-radius: 8px; margin-bottom: 20px; position: relative; overflow: hidden;
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
     }
-    .featured-item h3 { color: var(--accent); font-family: var(--font-disp); font-size: 18px; margin-bottom: 8px; }
 
     .recent-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); 
-      gap: 20px; margin-top: 16px; margin-bottom: 40px;
+      display: flex;
+      gap: 16px;
+      margin-top: 16px;
+      animation: fadeInUp 0.8s ease-out forwards;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding-bottom: 8px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    .recent-grid::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .recent-grid::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .recent-grid::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    .recent-grid::-webkit-scrollbar-thumb:hover {
+      background: var(--dim);
     }
 
     .recent-item {
-      border: 1px solid var(--border); background: var(--bg2);
-      border-radius: 6px; overflow: hidden; cursor: pointer;
-      transition: all 0.3s; height: 160px; display: flex; padding: 12px; gap: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      border-radius: 6px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+      width: 280px;
+      height: 160px;
+      display: flex;
+      gap: 12px;
+      padding: 12px;
+      flex-shrink: 0;
     }
-    .recent-item:hover { border-color: var(--accent); box-shadow: 0 0 15px rgba(155, 0, 0, 0.2); }
 
     .recent-item-thumb {
-      width: 100px; height: 100%; flex-shrink: 0;
-      background: var(--bg3); border-radius: 4px;
-      display: flex; align-items: center; justify-content: center; overflow: hidden;
+      width: 100px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+      background: var(--bg3);
+      border-radius: 4px;
+      flex-shrink: 0;
     }
-    .recent-item-thumb img { width: 100%; height: 100%; object-fit: cover; }
-    
-    .recent-item-info { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-    .recent-item-info h3 { font-size: 14px; color: var(--accent); text-transform: uppercase; }
 
-    .chat-wrap { max-width: 680px; margin-top: 20px; border: 1px solid var(--border); }
-    .chat-wrap iframe { width: 100%; height: 600px; border: none; background: #060606; }
+    .recent-item-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
 
-    footer { border-top: 1px solid var(--border); padding: 24px 0; display: flex; justify-content: space-between; font-size: 11px; color: var(--dim); }
-    .badge { border: 1px solid var(--border); padding: 3px 8px; font-size: 10px; text-transform: uppercase; margin-left: 8px; }
+    .recent-item-info h3 {
+      font-size: 14px;
+      color: var(--accent);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
 
-    #comic-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; padding: 20px; }
+    .recent-item-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.4s ease;
+      filter: brightness(0.9);
+    }
+
+    .recent-item:hover .recent-item-thumb img {
+      transform: scale(1.1);
+      filter: brightness(1.1);
+    }
+
+    .recent-item:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 15px rgba(155, 0, 0, 0.2);
+    }
+
+    .chat-wrap {
+      max-width: 680px;
+      overflow: hidden;
+      animation: fadeInUp 0.8s ease-out 1.2s both;
+    }
+
+    .chat-wrap iframe {
+      display: block;
+      width: 100%;
+      height: 700px;
+      border: none;
+      background: #060606;
+      scrollbar-width: none;
+    }
+
+    .chat-wrap iframe::-webkit-scrollbar {
+      display: none;
+    }
+
+    .featured-item {
+      border: 2px solid var(--accent);
+      padding: 20px;
+      background: linear-gradient(135deg, rgba(155, 0, 0, 0.1), transparent);
+      border-radius: 8px;
+      margin-bottom: 20px;
+      animation: fadeInUp 0.8s ease-out 0.7s both;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .featured-item::before {
+      content: '★';
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 24px;
+      color: var(--accent);
+      opacity: 0.3;
+    }
+
+    .featured-item h3 {
+      color: var(--accent);
+      font-family: var(--font-disp);
+      font-size: 18px;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+
+    .featured-item p {
+      color: var(--text);
+      font-size: 13px;
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
+
+    .featured-item a {
+      display: inline-block;
+      padding: 8px 16px;
+      border: 1px solid var(--accent);
+      background: transparent;
+      color: var(--accent);
+      border-radius: 4px;
+      font-size: 12px;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .featured-item a:hover {
+      background: var(--accent);
+      color: var(--bg);
+    }
+
+    footer {
+      border-top: 1px solid var(--border); padding: 24px 0;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 11px; color: var(--dim);
+    }
+    .footer-badges { display: flex; gap: 8px; }
+    .badge {
+      display: inline-block; border: 1px solid var(--border);
+      padding: 3px 8px; font-size: 10px; color: var(--dim);
+      letter-spacing: 1px; text-transform: uppercase;
+    }
   </style>
 </head>
 <body>
-
 <div class="site-wrapper">
+
   <header>
     <div class="header-tag">est. 2025</div>
     <h1 class="site-title">GUNKY<span>ZONE</span><span class="cursor"></span></h1>
@@ -165,7 +363,9 @@
   </header>
 
   <main>
-    <div class="welcome-box"><p></p></div>
+    <div class="welcome-box">
+      <p></p>
+    </div>
 
     <div class="section-label">Featured</div>
     <div id="featured-section"></div>
@@ -178,12 +378,18 @@
 
     <div class="section-label">Live Chat</div>
     <div class="chat-wrap">
-      <iframe src="chat-github.html?chat-only" title="GunkyZone chat"></iframe>
+      <iframe
+        src="chat-github.html?chat-only"
+        title="GunkyZone chat"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+        sandbox="allow-same-origin allow-scripts allow-popups allow-forms">
+      </iframe>
     </div>
 
-    <div id="comic-modal">
-      <button onclick="closeComicModal()" style="position: absolute; top: 20px; right: 20px; padding: 10px 20px; background: #9b0000; color: white; border: none; cursor: pointer; font-family: monospace;">CLOSE [X]</button>
-      <iframe id="comic-iframe" style="width: 100%; height: calc(100% - 60px); border: none;" src=""></iframe>
+    <div id="comic-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; padding: 20px;">
+      <button onclick="closeComicModal()" style="position: absolute; top: 20px; right: 20px; padding: 10px 20px; background: #9b0000; color: white; border: none; cursor: pointer; border-radius: 4px; font-family: 'Share Tech Mono', monospace;">Close</button>
+      <iframe id="comic-iframe" style="width: 100%; height: calc(100% - 60px); border: none; border-radius: 4px;" src=""></iframe>
     </div>
   </main>
 
@@ -194,9 +400,11 @@
       <span class="badge">firebase</span>
     </div>
   </footer>
+
 </div>
 
 <script>
+  // Firebase config
   window.FIREBASE_CONFIG = {
     apiKey: "AIzaSyD1L4Mmgnbl0W7lk1rnaRu5wv61TSFhJqM",
     authDomain: "gunkychat.firebaseapp.com",
@@ -204,108 +412,90 @@
     projectId: "gunkychat",
     storageBucket: "gunkychat.firebasestorage.app",
     messagingSenderId: "423489767287",
-    appId: "1:423489767287:web:ce847768781b0f589dc372"
+    appId: "1:423489767287:web:ce847768781b0f589dc372",
+    measurementId: "G-W7VBG0GSV9"
   };
 
   function loadSiteContent() {
-    var s1 = document.createElement('script');
-    s1.src = 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js';
-    s1.onload = function() {
-      var s2 = document.createElement('script');
-      s2.src = 'https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js';
-      s2.onload = function() {
-        firebase.initializeApp(window.FIREBASE_CONFIG);
-        firebase.database().ref('/site_content').once('value', function(snap) {
-          var data = snap.val() || {};
-          if (data.subtitle) document.querySelector('.site-subtitle').textContent = data.subtitle;
-          if (data.welcomeText) document.querySelector('.welcome-box p').textContent = data.welcomeText;
-          if (data.footerText) document.querySelector('footer span').textContent = data.footerText;
-        });
-      };
-      document.head.appendChild(s2);
-    };
-    document.head.appendChild(s1);
-  }
-
-  function loadRecentMedia() {
-    fetch('media.json').then(function(res) { return res.json(); }).then(function(data) {
-      var comics = data.comics || [];
-      var drawings = data.drawings || [];
-      comics.sort(function(a,b){ return b.uploadedAt - a.uploadedAt; });
-      drawings.sort(function(a,b){ return b.uploadedAt - a.uploadedAt; });
-
-      // Comics
-      if (comics.length > 0) {
-        var comicsHtml = '<div class="recent-grid">';
-        for (var i = 0; i < Math.min(3, comics.length); i++) {
-          comicsHtml += '<div class="recent-item" onclick="openComicViewer(\'' + comics[i].url.replace(/'/g, "\\'") + '\')">';
-          comicsHtml += '<div class="recent-item-thumb">';
-          if (comics[i].thumbnail) {
-            comicsHtml += '<img src="' + comics[i].thumbnail + '" alt="thumb">';
-          } else {
-            comicsHtml += '<canvas id="comic-thumb-' + i + '"></canvas>';
-          }
-          comicsHtml += '</div><div class="recent-item-info"><h3>' + comics[i].title + '</h3></div></div>';
-        }
-        comicsHtml += '</div>';
-        document.getElementById('recent-comics').innerHTML = comicsHtml;
-        
-        // Trigger PDF thumbs if no static thumbnail provided
-        comics.slice(0,3).forEach(function(c, idx) {
-          if(!c.thumbnail) renderPDFThumb(c.url, 'comic-thumb-' + idx);
-        });
-      }
-
-      // Drawings
-      if (drawings.length > 0) {
-        var drawingsHtml = '<div class="recent-grid">';
-        for (var j = 0; j < Math.min(3, drawings.length); j++) {
-          drawingsHtml += '<div class="recent-item" onclick="location.href=\'drawings.html\'">';
-          drawingsHtml += '<div class="recent-item-thumb"><img src="' + drawings[j].url + '" alt="drawing"></div>';
-          drawingsHtml += '<div class="recent-item-info"><h3>' + drawings[j].title + '</h3></div></div>';
-        }
-        drawingsHtml += '</div>';
-        document.getElementById('recent-drawings').innerHTML = drawingsHtml;
-      }
-    });
-  }
-
-  function renderPDFThumb(pdfUrl, canvasId) {
-    if (!window.pdfjsLib) {
+    function loadScript(src, cb) {
       var s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-      s.onload = function() { renderPDFThumb(pdfUrl, canvasId); };
+      s.src = src;
+      s.onload = cb;
+      s.onerror = function() {
+        console.warn('Failed to load Firebase');
+      };
+      s.async = true;
       document.head.appendChild(s);
-      return;
     }
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    pdfjsLib.getDocument(pdfUrl).promise.then(function(pdf) {
-      pdf.getPage(1).then(function(page) {
-        var canvas = document.getElementById(canvasId);
-        if (!canvas) return;
-        var viewport = page.getViewport({ scale: 0.2 });
-        canvas.width = viewport.width; canvas.height = viewport.height;
-        page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport });
+
+    loadScript('https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js', function() {
+      loadScript('https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js', function() {
+        try {
+          firebase.initializeApp(window.FIREBASE_CONFIG);
+          var contentRef = firebase.database().ref('/site_content');
+          
+          contentRef.once('value', function(snap) {
+            var data = snap.val() || {};
+            
+            // Update subtitle
+            if (data.subtitle) {
+              var subtitleEl = document.querySelector('.site-subtitle');
+              if (subtitleEl) subtitleEl.textContent = data.subtitle;
+            }
+            
+            // Update welcome text
+            if (data.welcomeText) {
+              var welcomeEl = document.querySelector('.welcome-box p');
+              if (welcomeEl) welcomeEl.textContent = data.welcomeText;
+            }
+            
+            // Update chat label
+            if (data.chatLabel) {
+              var labelEl = document.querySelector('.section-label');
+              if (labelEl) labelEl.textContent = data.chatLabel;
+            }
+            
+            // Update footer text
+            if (data.footerText) {
+              var footerSpan = document.querySelector('footer span');
+              if (footerSpan) footerSpan.textContent = data.footerText;
+            }
+          });
+        } catch(err) {
+          console.warn('Firebase content load error:', err);
+        }
       });
     });
   }
 
-  function openComicViewer(url) {
-    document.getElementById('comic-iframe').src = 'pdf-viewer.html?url=' + encodeURIComponent(url);
-    document.getElementById('comic-modal').style.display = 'block';
-  }
-  function closeComicModal() {
-    document.getElementById('comic-modal').style.display = 'none';
-    document.getElementById('comic-iframe').src = '';
+  // Load content when page is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadSiteContent);
+  } else {
+    loadSiteContent();
   }
 
-  document.addEventListener('DOMContentLoaded', function() {
-    loadSiteContent();
-    loadRecentMedia();
-  });
-</script>
-</body>
-</html>        // Show recent comics
+  function loadRecentMedia() {
+    fetch('media.json')
+      .then(function(res) { return res.json(); })
+      .then(function(data) {
+        var comics = data.comics || [];
+        var drawings = data.drawings || [];
+        
+        // Sort by date (oldest first) so newest appears on the right
+        comics.sort(function(a, b) { return a.uploadedAt - b.uploadedAt; });
+        drawings.sort(function(a, b) { return a.uploadedAt - b.uploadedAt; });
+
+        // Featured section - show latest item (last in sorted array)
+        var featuredEl = document.getElementById('featured-section');
+        if (comics.length > 0 || drawings.length > 0) {
+          var latest = comics.length > 0 ? comics[comics.length - 1] : drawings[drawings.length - 1];
+          var type = comics.length > 0 ? 'comic' : 'drawing';
+          var featuredHtml = '<div class="featured-item"><h3>' + latest.title + '</h3><p>Latest ' + type + ' · ' + new Date(latest.uploadedAt).toLocaleDateString() + '</p><a href="' + (type === 'comic' ? 'comics.html' : 'drawings.html') + '">View</a></div>';
+          if (featuredEl) featuredEl.innerHTML = featuredHtml;
+        }
+
+        // Show recent comics
         if (comics.length > 0) {
           var comicsHtml = '<div class="recent-grid">';
           for (var i = 0; i < Math.min(3, comics.length); i++) {
@@ -323,9 +513,43 @@
           if (comicsEl) {
             comicsEl.innerHTML = comicsHtml;
           }
-        }  if (document.readyState === 'loading') {
+        }
+
+        // Show recent drawings
+        if (drawings.length > 0) {
+          var drawingsHtml = '<div class="recent-grid">';
+          for (var i = 0; i < Math.min(3, drawings.length); i++) {
+            drawingsHtml += '<div class="recent-item" onclick="location.href=\'drawings.html\'" title="' + drawings[i].title + '">';
+            drawingsHtml += '<div class="recent-item-thumb"><img src="' + drawings[i].url + '" alt="' + drawings[i].title + '" loading="lazy" decoding="async"></div>';
+            drawingsHtml += '</div>';
+          }
+          drawingsHtml += '</div>';
+          var drawingsEl = document.getElementById('recent-drawings');
+          if (drawingsEl) drawingsEl.innerHTML = drawingsHtml;
+        }
+      })
+      .catch(function(err) {
+        console.error('Error loading media:', err);
+      });
+  }
+
+  function openComicViewer(pdfUrl) {
+    var modal = document.getElementById('comic-modal');
+    var iframe = document.getElementById('comic-iframe');
+    iframe.src = 'pdf-viewer.html?url=' + encodeURIComponent(pdfUrl);
+    modal.style.display = 'block';
+  }
+
+  function closeComicModal() {
+    document.getElementById('comic-modal').style.display = 'none';
+    document.getElementById('comic-iframe').src = '';
+  }
+
+  if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', loadRecentMedia);
   } else {
     loadRecentMedia();
   }
 </script>
+</body>
+</html>
