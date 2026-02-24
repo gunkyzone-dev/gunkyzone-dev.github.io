@@ -107,7 +107,6 @@
 
     .comics-grid {
       display: flex;
-      flex-wrap: wrap;
       gap: 24px;
       margin-bottom: 40px;
     }
@@ -119,10 +118,11 @@
       cursor: pointer;
       transition: all 0.3s;
       overflow: hidden;
+      width: 140px;
+      height: 200px;
+      flex-shrink: 0;
       display: flex;
       flex-direction: column;
-      width: 60px;
-      height: 180px;
     }
 
     .comic-card:hover {
@@ -139,6 +139,7 @@
       letter-spacing: 1px;
       text-align: center;
       border-top: 1px solid var(--border);
+      margin: 0;
       margin-top: auto;
     }
 
@@ -357,38 +358,10 @@
   }
 
   function generateThumbnail(pdfUrl, idx) {
-    pdfjsLib.getDocument(pdfUrl).promise.then(function(pdf) {
-      pdf.getPage(1).then(function(page) {
-        var scale = 0.3;
-        var viewport = page.getViewport({ scale: scale });
-
-        var canvas = document.createElement('canvas');
-        var context = canvas.getContext('2d');
-
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
-
-        page.render({
-          canvasContext: context,
-          viewport: viewport
-        }).promise.then(function() {
-          var thumbContainer = document.getElementById('thumb-' + idx);
-          if (thumbContainer) {
-            thumbContainer.innerHTML = '';
-            thumbContainer.appendChild(canvas);
-            canvas.style.maxWidth = '100%';
-            canvas.style.maxHeight = '100%';
-            canvas.style.objectFit = 'contain';
-          }
-        });
-      });
-    }).catch(function(err) {
-      console.error('Error generating thumbnail:', err);
-      var thumbContainer = document.getElementById('thumb-' + idx);
-      if (thumbContainer) {
-        thumbContainer.innerHTML = '<span style="font-size: 24px; color: var(--accent);">📖</span>';
-      }
-    });
+    var thumbContainer = document.getElementById('thumb-' + idx);
+    if (thumbContainer) {
+      thumbContainer.innerHTML = '<span style="font-size: 32px;">📖</span>';
+    }
   }
 
   function openComic(url, title) {
