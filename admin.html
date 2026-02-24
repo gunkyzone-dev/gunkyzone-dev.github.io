@@ -12,7 +12,18 @@
       --text: #d4c0c0; --accent: #ff0000; --dim: #5a3a3a;
       --font-mono: 'VT323', monospace;
     }
-    body { background: var(--bg); color: var(--text); font-family: var(--font-mono); padding: 20px; font-size: 18px; }
+    body { 
+      background: var(--bg); color: var(--text); font-family: var(--font-mono); padding: 20px; font-size: 18px; 
+      animation: terminalOn 0.4s ease-out forwards;
+    }
+    @keyframes terminalOn {
+      0% { opacity: 0; transform: scaleY(0.95) scaleX(0.95); filter: brightness(3) contrast(2); }
+      20% { opacity: 1; transform: scaleY(1.02) scaleX(1.02); filter: brightness(1.5) contrast(1.5); }
+      40% { opacity: 0.8; transform: scaleY(0.98) scaleX(0.98); filter: brightness(1.2); }
+      60% { opacity: 1; transform: scaleY(1.01) scaleX(1.01); filter: brightness(1.1); }
+      80% { opacity: 0.9; transform: scaleY(0.99) scaleX(0.99); filter: brightness(1.05); }
+      100% { opacity: 1; transform: scaleY(1) scaleX(1); filter: brightness(1) contrast(1); }
+    }
     .container { max-width: 800px; margin: 0 auto; border: 1px solid var(--border); padding: 20px; background: var(--bg2); }
     h1 { color: var(--accent); margin-bottom: 20px; border-bottom: 1px solid var(--border); }
     
@@ -58,12 +69,12 @@
   
   <div class="form-group">
     <label>FILE_URL (PDF or Image)</label>
-    <input type="text" id="m-url" placeholder="/comics/file.pdf">
+    <input type="text" id="m-url" placeholder="comics/file.pdf or drawings/image.png">
   </div>
   
   <div class="form-group">
     <label>THUMBNAIL_URL (Required for grid)</label>
-    <input type="text" id="m-thumb" placeholder="/thumbnails/thumb.png">
+    <input type="text" id="m-thumb" placeholder="thumbnails/thumb.png">
   </div>
 
   <button onclick="uploadMedia()">DEPLOY_TO_SITE</button>

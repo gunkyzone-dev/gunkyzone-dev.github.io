@@ -1,9 +1,11 @@
 {
   "comics": [
-    {"title": "TEAR1", "url": "/comics/TEAR1_compressed.pdf", "thumbnail": "/thumbnails/TEAR1_THUMB.png", "uploadedAt": 1740355200000},
-    {"title": "TEAR2", "url": "/comics/TEAR2_compressed.pdf", "thumbnail": "/thumbnails/TEAR2_THUMB.png", "uploadedAt": 1740441600000}
+    {"title": "TEAR1", "url": "comics/TEAR1_compressed.pdf", "thumbnail": "thumbnails/TEAR1_THUMB.png", "uploadedAt": 1740355200000},
+    {"title": "TEAR2", "url": "comics/TEAR2_compressed.pdf", "thumbnail": "thumbnails/TEAR2_THUMB.png", "uploadedAt": 1740441600000}
   ],
-  "drawings": [],
+  "drawings": [
+    {"title": "Comin up Next:", "url": "drawings/TEAR3preview.png", "thumbnail": "drawings/TEAR3preview.png", "uploadedAt": 1740445000000}
+  ],
   "stories": [],
   "gallery": []
 }

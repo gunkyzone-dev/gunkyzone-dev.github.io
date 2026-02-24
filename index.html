@@ -52,11 +52,22 @@
     @keyframes jitter { 0% { transform: translate(2px, -1px); } 50% { transform: translate(-1px, 1px); } }
     .welcome-box { border: 1px solid var(--border); padding: 20px; background: var(--bg2); margin: 30px 0; min-height: 60px; }
     .section-label { color: var(--accent2); font-size: 14px; margin: 40px 0 10px; border-bottom: 1px solid var(--border); }
-    .recent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
-    .recent-item { border: 1px solid var(--border); background: #050000; padding: 10px; cursor: pointer; display: flex; gap: 10px; align-items: center; transition: 0.2s; }
-    .recent-item:hover { border-color: var(--accent); background: #1a0000; }
-    .recent-item-thumb { width: 80px; height: 80px; background: #111; border: 1px solid #222; overflow: hidden; }
-    .recent-item-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    
+    /* Drawings Grid */
+    .drawing-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+    .drawing-item { border: 1px solid var(--border); background: #050000; padding: 10px; cursor: pointer; display: flex; gap: 10px; align-items: center; transition: 0.2s; }
+    .drawing-item:hover { border-color: var(--accent); background: #1a0000; }
+    .drawing-thumb { width: 60px; height: 60px; background: #000; border: 1px solid #222; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .drawing-thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+    /* Compact Comics List */
+    .compact-list { display: flex; flex-direction: column; gap: 8px; }
+    .compact-item { border: 1px solid var(--border); background: #050000; padding: 8px 12px; cursor: pointer; display: flex; gap: 15px; align-items: center; transition: 0.2s; }
+    .compact-item:hover { border-color: var(--accent); background: #1a0000; }
+    .compact-thumb { width: 30px; height: 40px; background: #111; border: 1px solid #222; flex-shrink: 0; }
+    .compact-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .compact-info { display: flex; justify-content: space-between; width: 100%; align-items: center; }
+
     footer { padding: 40px 0; border-top: 1px solid var(--border); color: var(--dim); font-size: 14px; }
   </style>
 </head>
@@ -83,12 +94,15 @@
     </div>
 
     <div class="section-label">> LATEST_ENTRIES</div>
-    <div id="recent-media" class="recent-grid">LOADING_DATA...</div>
+    <div id="recent-entries" class="recent-grid">LOADING_DATA...</div>
 
     <div class="section-label">> LIVE_COMMS</div>
     <div style="border: 1px solid var(--border); background: #000;">
       <iframe src="chat-github.html" style="width:100%; height:400px; border:none;"></iframe>
     </div>
+
+    <div class="section-label">> LATEST_COMICS</div>
+    <div id="recent-comics" class="recent-grid">LOADING_DATA...</div>
   </main>
 
   <footer>
@@ -138,27 +152,95 @@
       typeWriter("type-footer", "© 2025 GUNKY_SYSTEMS. DATA_PORT: SECURE.", 20, 4500);
     });
 
-    fetch('media.json').then(r => r.json()).then(data => {
-      const grid = document.getElementById('recent-media');
+    fetch('media.json').then(r => r.json()).then(localData => {
+      // Try to fetch from Firebase first
+      if (typeof firebase !== 'undefined' && firebase.database) {
+        firebase.database().ref('media_metadata').once('value').then(snap => {
+          const fbData = snap.val();
+          if (fbData) {
+            const comics = fbData.comics ? Object.values(fbData.comics) : [];
+            const drawings = fbData.drawings ? Object.values(fbData.drawings) : [];
+            renderRecent([...comics, ...drawings]);
+            renderComics(comics);
+          } else {
+            renderRecent([...(localData.comics || []), ...(localData.drawings || [])]);
+            renderComics(localData.comics || []);
+          }
+        }).catch(() => {
+          renderRecent([...(localData.comics || []), ...(localData.drawings || [])]);
+          renderComics(localData.comics || []);
+        });
+      } else {
+        renderRecent([...(localData.comics || []), ...(localData.drawings || [])]);
+        renderComics(localData.comics || []);
+      }
+    });
+
+    function renderRecent(allMedia) {
+      const grid = document.getElementById('recent-entries');
       grid.innerHTML = "";
-      const all = [...(data.comics || []), ...(data.drawings || [])]
+      
+      // Filter for drawings only
+      const drawings = allMedia.filter(m => !m.url.toLowerCase().endsWith('.pdf'));
+      const all = drawings
         .sort((a,b) => (b.uploadedAt || 0) - (a.uploadedAt || 0))
-        .slice(0, 3);
+        .slice(0, 6);
+
+      if (all.length === 0) {
+        grid.innerHTML = '<div style="color: var(--dim);">NO_DATA_FOUND</div>';
+        return;
+      }
+
+      const container = document.createElement('div');
+      container.className = 'drawing-grid';
 
       all.forEach(item => {
-        const thumb = item.thumbnail || 'https://via.placeholder.com/80x80/080505/cc0000?text=GUNKY';
-        const target = item.url.toLowerCase().endsWith('.pdf') ? 'comics.html' : 'drawings.html';
+        const thumb = item.thumbnail || item.thumb || 'https://via.placeholder.com/80x80/080505/cc0000?text=GUNKY';
+        const target = `drawings.html?url=${encodeURIComponent(item.url)}&from=index`;
         
-        grid.innerHTML += `
-          <div class="recent-item" onclick="location.href='${target}'">
-            <div class="recent-item-thumb"><img src="${thumb}"></div>
+        container.innerHTML += `
+          <div class="drawing-item" onclick="location.href='${target}'">
+            <div class="drawing-thumb"><img src="${thumb}"></div>
             <div>
               <div style="font-size:12px; color:var(--dim)">ID: ${Math.random().toString(16).slice(2,8).toUpperCase()}</div>
               <div style="color:var(--accent)">${item.title.toUpperCase()}</div>
             </div>
           </div>`;
       });
-    });
+      grid.appendChild(container);
+    }
+
+    function renderComics(comics) {
+      const grid = document.getElementById('recent-comics');
+      if (!grid) return;
+      grid.innerHTML = "";
+      const sorted = comics.sort((a,b) => (b.uploadedAt || 0) - (a.uploadedAt || 0)).slice(0, 5);
+
+      if (sorted.length === 0) {
+        grid.innerHTML = '<div style="color: var(--dim);">NO_COMICS_FOUND</div>';
+        return;
+      }
+
+      const list = document.createElement('div');
+      list.className = 'compact-list';
+
+      sorted.forEach(item => {
+        const thumb = item.thumbnail || item.thumb || 'https://via.placeholder.com/80x80/080505/cc0000?text=GUNKY';
+        const target = `comics.html?url=${encodeURIComponent(item.url)}&from=index`;
+        
+        list.innerHTML += `
+          <div class="compact-item" onclick="location.href='${target}'">
+            <div class="compact-thumb"><img src="${thumb}"></div>
+            <div class="compact-info">
+              <div>
+                <div style="font-size:12px; color:var(--dim)">ID: ${Math.random().toString(16).slice(2,8).toUpperCase()}</div>
+                <div style="color:var(--accent)">${item.title.toUpperCase()}</div>
+              </div>
+            </div>
+          </div>`;
+      });
+      grid.appendChild(list);
+    }
   };
 </script>
 </body>

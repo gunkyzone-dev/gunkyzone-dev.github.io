@@ -11,7 +11,18 @@
       --bg: #020202; --border: #1a1a1a; --text: #d4c0c0;
       --accent: #9b0000; --font-disp: 'VT323', monospace;
     }
-    body { background: var(--bg); color: var(--text); font-family: var(--font-disp); padding: 20px; }
+    body { 
+      background: var(--bg); color: var(--text); font-family: var(--font-disp); padding: 20px; 
+      animation: terminalOn 0.4s ease-out forwards;
+    }
+    @keyframes terminalOn {
+      0% { opacity: 0; transform: scaleY(0.95) scaleX(0.95); filter: brightness(3) contrast(2); }
+      20% { opacity: 1; transform: scaleY(1.02) scaleX(1.02); filter: brightness(1.5) contrast(1.5); }
+      40% { opacity: 0.8; transform: scaleY(0.98) scaleX(0.98); filter: brightness(1.2); }
+      60% { opacity: 1; transform: scaleY(1.01) scaleX(1.01); filter: brightness(1.1); }
+      80% { opacity: 0.9; transform: scaleY(0.99) scaleX(0.99); filter: brightness(1.05); }
+      100% { opacity: 1; transform: scaleY(1) scaleX(1); filter: brightness(1) contrast(1); }
+    }
     .site-wrapper { max-width: 900px; margin: 0 auto; }
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; margin-top: 40px; }
     .comic-card { border: 1px solid var(--border); background: #050505; cursor: pointer; transition: 0.2s; }
@@ -34,24 +45,60 @@
   <div id="comic-grid" class="grid"></div>
 </div>
 
-<div id="comic-modal">
+<div id="comic-modal" onclick="if(event.target === this) closeComic()">
   <div id="modal-content">
     <span class="close-modal" onclick="closeComic()">[ CLOSE_X ]</span>
     <iframe id="comic-iframe" src=""></iframe>
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
 <script>
+  const fbConfig = {
+    apiKey: "AIzaSyD1L4Mmgnbl0W7lk1rnaRu5wv61TSFhJqM",
+    authDomain: "gunkychat.firebaseapp.com",
+    databaseURL: "https://gunkychat-default-rtdb.firebaseio.com",
+    projectId: "gunkychat",
+    storageBucket: "gunkychat.firebasestorage.app",
+    messagingSenderId: "423489767287",
+    appId: "1:423489767287:web:ce847768781b0f589dc372"
+  };
+  firebase.initializeApp(fbConfig);
+
   function loadComics() {
+    // First try to load from Firebase, fallback to media.json
+    if (typeof firebase !== 'undefined' && firebase.database) {
+      firebase.database().ref('media_metadata/comics').once('value').then(snap => {
+        const data = snap.val();
+        if (data) {
+          const comics = Object.values(data).sort((a, b) => b.uploadedAt - a.uploadedAt);
+          renderComics(comics);
+        } else {
+          fetchLocalComics();
+        }
+      }).catch(() => fetchLocalComics());
+    } else {
+      fetchLocalComics();
+    }
+  }
+
+  function fetchLocalComics() {
     fetch('media.json').then(r => r.json()).then(data => {
-      const grid = document.getElementById('comic-grid');
-      data.comics.forEach(comic => {
-        grid.innerHTML += `
-          <div class="comic-card" onclick="openComic('${comic.url}')">
-            <img class="thumb" src="${comic.thumbnail || ''}" alt="THUMB">
-            <div class="info">${comic.title}</div>
-          </div>`;
-      });
+      renderComics(data.comics || []);
+    });
+  }
+
+  function renderComics(comics) {
+    const grid = document.getElementById('comic-grid');
+    grid.innerHTML = '';
+    comics.forEach(comic => {
+      grid.innerHTML += `
+        <div class="comic-card" onclick="openComic('${comic.url}')">
+          <img class="thumb" src="${comic.thumbnail || ''}" alt="THUMB">
+          <div class="info">${comic.title}</div>
+        </div>`;
     });
   }
 
@@ -59,16 +106,32 @@
     const modal = document.getElementById('comic-modal');
     const iframe = document.getElementById('comic-iframe');
     // We send the file to your custom viewer
-    iframe.src = `pdf-viewer.html?file=${encodeURIComponent(url)}`;
+    iframe.src = `pdf-viewer.html?url=${encodeURIComponent(url)}`;
     modal.style.display = 'block';
   }
 
   function closeComic() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('from') === 'index') {
+      window.location.href = 'index.html';
+      return;
+    }
     document.getElementById('comic-modal').style.display = 'none';
     document.getElementById('comic-iframe').src = '';
+    // Clean up the URL so refreshing doesn't reopen the comic
+    window.history.replaceState({}, document.title, window.location.pathname);
   }
 
-  window.onload = loadComics;
+  window.onload = () => {
+    loadComics();
+    
+    // Check if a specific comic was requested via URL
+    const params = new URLSearchParams(window.location.search);
+    const requestedUrl = params.get('url');
+    if (requestedUrl) {
+      openComic(requestedUrl);
+    }
+  };
 </script>
 </body>
 </html>
