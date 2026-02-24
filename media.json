@@ -1,6 +1,8 @@
 {
   "comics": [],
-  "drawings": [],
+  "drawings": [
+    {"title": "Closed Mouth Open Eye", "url": "/drawings/closed mouth open eye.png", "uploadedAt": 1740268800000}
+  ],
   "stories": [],
   "gallery": []
 }
