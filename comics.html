@@ -50,22 +50,24 @@
 
     @keyframes crtBoot {
       0% {
-        background: radial-gradient(circle at center, white 0%, transparent 70%);
+        filter: blur(8px) brightness(2) saturate(0.5);
         opacity: 1;
       }
-      15% {
-        background: radial-gradient(circle at center, white 0%, transparent 70%);
+      25% {
+        filter: blur(4px) brightness(1.6) saturate(0.7);
         opacity: 1;
       }
-      30% {
-        opacity: 0;
-        clip-path: inset(50% 0 50% 0);
+      50% {
+        filter: blur(1px) brightness(1.2) saturate(0.9);
+        opacity: 0.95;
+        clip-path: inset(40% 0 40% 0);
       }
-      60% {
-        opacity: 0.9;
-        clip-path: inset(0 0 0 0);
+      75% {
+        opacity: 0.98;
+        clip-path: inset(10% 0 10% 0);
       }
       100% {
+        filter: blur(0px) brightness(1) saturate(1);
         opacity: 1;
         clip-path: inset(0 0 0 0);
       }
