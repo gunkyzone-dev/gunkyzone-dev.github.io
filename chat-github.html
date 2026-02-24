@@ -3,1022 +3,215 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://accounts.google.com https://fonts.googleapis.com https://*.firebaseio.com; script-src-elem 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://accounts.google.com https://*.firebaseio.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' data: blob: https://*.googleapis.com https://www.googleapis.com https://www.gstatic.com https://accounts.google.com https://*.firebaseio.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.firebaseio.com; img-src 'self' data;">
-  <title>GunkyZone Chat</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
-  <script>
-    if (window.location.search.includes('chat-only')) {
-      document.documentElement.classList.add('chat-only');
-    }
-  </script>
+  
+  <title>GunkyZone - LIVE_COMMS</title>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg:        #020202;
-      --bg2:       #050505;
-      --bg3:       #0a0a0a;
-      --border:    #1a1a1a;
-      --dim:       #3a3a3a;
-      --text:      #d4c0c0;
-      --accent:    #9b0000;
-      --accent2:   #cc0000;
-      --danger:    #cc0000;
-      --glow:      rgba(155, 0, 0, 0.22);
-      --font-mono: 'Share Tech Mono', monospace;
-      --font-disp: 'VT323', monospace;
-      --font-body: 'IM Fell English', serif;
+      --bg: #020202; --bg2: #080505; --border: #2a0000;
+      --text: #d4c0c0; --accent: #ff0000; --accent2: #9b0000;
+      --font-mono: 'VT323', monospace;
     }
-
-    html { scroll-behavior: smooth; }
-
     body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: var(--font-mono);
-      font-size: 15px;
-      line-height: 1.7;
-      min-height: 100vh;
-      animation: crtBoot 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+      background: var(--bg); color: var(--text); font-family: var(--font-mono);
+      font-size: 19px; padding: 10px; line-height: 1.2; overflow: hidden;
     }
-
-    @keyframes crtBoot {
-      0% {
-        filter: blur(8px) brightness(2) saturate(0.5);
-        opacity: 1;
-        box-shadow: inset 0 0 100px 50px rgba(255, 255, 255, 0.8);
-      }
-      15% {
-        box-shadow: inset 0 0 80px 40px rgba(255, 255, 255, 0.6);
-      }
-      25% {
-        filter: blur(4px) brightness(1.6) saturate(0.7);
-        opacity: 1;
-        box-shadow: inset 0 0 40px 20px rgba(255, 255, 255, 0.3);
-      }
-      50% {
-        filter: blur(1px) brightness(1.2) saturate(0.9);
-        opacity: 0.95;
-        clip-path: inset(40% 0 40% 0);
-        box-shadow: none;
-      }
-      75% {
-        opacity: 0.98;
-        clip-path: inset(10% 0 10% 0);
-      }
-      100% {
-        filter: blur(0px) brightness(1) saturate(1);
-        opacity: 1;
-        clip-path: inset(0 0 0 0);
-        box-shadow: none;
-      }
+    #chat-container { display: flex; flex-direction: column; height: 95vh; }
+    #messages-container {
+      flex-grow: 1; overflow-y: auto; border: 1px solid var(--border);
+      background: #000; padding: 10px; margin-bottom: 10px;
+      display: flex; flex-direction: column; gap: 6px;
     }
-
-    .site-wrapper {
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 40px 20px;
-      position: relative;
-      overflow: hidden;
+    .msg { border-bottom: 1px solid #1a0000; padding-bottom: 4px; animation: scanIn 0.2s ease-out; }
+    .msg-author { font-weight: bold; text-transform: uppercase; margin-right: 8px; }
+    .input-wrap { display: flex; gap: 5px; border: 1px solid var(--border); background: var(--bg2); padding: 5px; align-items: center; }
+    input {
+      background: transparent; border: none; color: #fff; 
+      padding: 8px; font-family: var(--font-mono); font-size: 18px; outline: none; flex-grow: 1;
     }
-
-    /* CRT overlay: static scanlines + vignette */
-    .site-wrapper::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 30;
-      background-image: repeating-linear-gradient(
-        rgba(0,0,0,0.34) 0px,
-        rgba(0,0,0,0.34) 3px,
-        transparent 3px,
-        transparent 9px
-      );
-      background-size: 100% 9px;
-      mix-blend-mode: multiply;
-      opacity: 0.98;
-      animation: scanMove 6s linear infinite;
+    #name-input { width: 80px; border-right: 1px solid var(--border); color: var(--accent2); text-align: center; }
+    #messages-container::-webkit-scrollbar { width: 6px; }
+    #messages-container::-webkit-scrollbar-thumb { background: var(--accent2); }
+    @keyframes scanIn { from { opacity: 0; transform: translateX(-5px); } to { opacity: 1; transform: translateX(0); } }
+    
+    #settings-btn {
+      background: transparent; border: 1px solid var(--border); color: var(--accent2);
+      padding: 8px 12px; cursor: pointer; font-family: var(--font-mono); font-size: 16px;
     }
-
-    .site-wrapper::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-      z-index: 31;
-      background: radial-gradient(
-        ellipse at center,
-        rgba(255,255,255,0) 0%,
-        rgba(0,0,0,0) 55%,
-        rgba(0,0,0,0.36) 100%
-      );
-      mix-blend-mode: multiply;
-      opacity: 0.9;
-      box-shadow: inset 0 0 200px 100px rgba(255, 255, 255, 0.02);
+    #settings-btn:hover { background: var(--bg2); }
+    
+    #settings-panel {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: var(--bg); border: 2px solid var(--accent); padding: 20px;
+      z-index: 1000; min-width: 300px; display: none;
     }
-
-    @keyframes scanMove {
-      from { background-position: 0 0; }
-      to { background-position: 0 9px; }
+    
+    .setting-row {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 15px; gap: 10px;
     }
-
-    header { border-bottom: 1px solid var(--border); padding: 28px 0 18px; }
-    .site-title {
-      font-family: var(--font-disp); font-size: clamp(52px, 9vw, 90px);
-      line-height: 1; color: var(--accent); text-shadow: 0 0 40px var(--glow); letter-spacing: 2px;
+    
+    .setting-row label { color: var(--text); min-width: 80px; }
+    
+    #color-picker {
+      width: 60px; height: 30px; border: 1px solid var(--border);
+      background: transparent; cursor: pointer;
     }
-    .site-title span { color: var(--accent2); }
-
-    nav { display: flex; margin-top: 28px; border: 1px solid var(--border); width: fit-content; }
-    nav a {
-      display: block; padding: 7px 18px; color: var(--dim);
-      font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase;
-      border-right: 1px solid var(--border); transition: all 0.15s;
+    
+    #style-select {
+      background: var(--bg2); border: 1px solid var(--border); color: var(--text);
+      padding: 5px; font-family: var(--font-mono);
     }
-    nav a:last-child { border-right: none; }
-    nav a:hover { background: var(--bg3); color: var(--accent); text-decoration: none; }
-    nav a.active { background: var(--bg3); color: var(--accent); }
-
-    html.chat-only header {
-      display: none;
+    
+    #close-settings {
+      background: var(--accent); color: #fff; border: none; padding: 8px 16px;
+      cursor: pointer; font-family: var(--font-mono); margin-top: 10px;
     }
-
-    html.chat-only .site-wrapper {
-      padding: 20px;
-      height: auto;
-      overflow: hidden;
-    }
-
-    body.chat-only header {
-      display: none;
-    }
-
-    body.chat-only .site-wrapper {
-      padding: 20px;
-      height: auto;
-    }
-
-    /* ─── CHAT ROOM ────────────────────────────── */
-    .chat-room {
-      border: 1px solid var(--border);
-      background: var(--bg2);
-      padding: 14px;
-      border-radius: 6px;
-      box-shadow: 0 6px 24px rgba(0,0,0,0.3);
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      max-height: 500px;
-      overflow: hidden;
-    }
-
-    .chat-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-      position: relative;
-    }
-
-    .chat-title {
-      font-size: 12px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      color: var(--accent);
-    }
-
-    .chat-messages {
-      background: var(--bg3);
-      border: 1px solid var(--border);
-      padding: 10px;
-      height: 400px;
-      overflow-y: auto;
-      font-size: 13px;
-      margin-bottom: 10px;
-      border-radius: 4px;
-    }
-
-    .chat-messages::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    .chat-messages::-webkit-scrollbar-track {
-      background: var(--bg);
-    }
-
-    .chat-messages::-webkit-scrollbar-thumb {
-      background: var(--border);
-      border-radius: 4px;
-    }
-
-    .chat-messages::-webkit-scrollbar-thumb:hover {
-      background: var(--dim);
-    }
-
-    .chat-msg {
-      margin-bottom: 10px;
-      animation: fadeIn 0.3s ease-out;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(5px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .chat-msg.msg-sent {
-      animation: msgPop 0.6s cubic-bezier(0.16, 0.84, 0.24, 1) both;
-    }
-
-    @keyframes msgPop {
-      from { transform: translateY(10px) scale(0.994); opacity: 0; }
-      60% { transform: translateY(-1px) scale(1.001); opacity: 1; }
-      to { transform: translateY(0) scale(1); opacity: 1; }
-    }
-
-    .chat-author {
-      color: var(--accent2);
-      font-size: 12px;
-      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-      font-weight: 800;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .chat-ts {
-      color: var(--dim);
-      font-size: 11px;
-      font-weight: 400;
-    }
-
-    .chat-text {
-      color: var(--text);
-      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-      font-size: 14px;
-      line-height: 1.45;
-      margin-top: 6px;
-      word-wrap: break-word;
-    }
-
-    .chat-form {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .chat-form input[type="text"] {
-      padding: 8px;
-      border: 1px solid var(--border);
-      background: var(--bg3);
-      color: var(--text);
-      font-family: var(--font-mono);
-      border-radius: 4px;
-      transition: border-color 0.2s;
-    }
-
-    .chat-form input[type="text"]:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
-
-    #chat-name {
-      width: 120px;
-    }
-
-    #chat-text {
-      flex: 1;
-      min-width: 200px;
-    }
-
-    .chat-form input[type="submit"] {
-      padding: 8px 16px;
-      border: 1px solid var(--border);
-      background: var(--bg3);
-      color: var(--accent);
-      cursor: pointer;
-      font-family: var(--font-mono);
-      text-transform: uppercase;
-      font-size: 12px;
-      letter-spacing: 1px;
-      border-radius: 4px;
-      transition: all 0.2s;
-    }
-
-    .chat-form input[type="submit"]:hover {
-      background: var(--accent);
-      color: var(--bg);
-    }
-
-    .chat-delete-btn {
-      background: transparent;
-      border: none;
-      color: var(--dim);
-      cursor: pointer;
-      font-size: 16px;
-      padding: 0;
-      margin-left: 4px;
-      opacity: 0.6;
-      transition: opacity 0.2s, color 0.2s;
-    }
-
-    .chat-delete-btn:hover {
-      opacity: 1;
-      color: var(--danger);
-    }
-
-    #chat-admin-btn {
-      background: transparent;
-      border: none;
-      color: var(--dim);
-      cursor: pointer;
-      font-size: 14px;
-      padding: 4px;
-      width: 24px;
-      height: 24px;
-      opacity: 0.7;
-      transition: opacity 0.2s;
-    }
-
-    #chat-admin-btn:hover {
-      opacity: 1;
-    }
-
-    #chat-admin-panel {
-      position: absolute;
-      right: 8px;
-      top: 36px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      padding: 12px;
-      border-radius: 6px;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.5);
-      z-index: 9999;
-      min-width: 240px;
-      display: none;
-    }
-
-    .admin-panel-title {
-      font-size: 13px;
-      margin-bottom: 10px;
-      color: var(--dim);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .admin-btn {
-      display: block;
-      width: 100%;
-      margin-bottom: 8px;
-      padding: 8px;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      cursor: pointer;
-      font-family: var(--font-mono);
-      font-size: 12px;
-      transition: all 0.2s;
-    }
-
-    .admin-btn-primary {
-      background: var(--accent);
-      color: #fff;
-    }
-
-    .admin-btn-primary:hover {
-      background: var(--accent2);
-    }
-
-    .admin-btn-google {
-      background: #4285F4;
-      color: #fff;
-    }
-
-    .admin-btn-google:hover {
-      background: #357ae8;
-    }
-
-    .admin-input {
-      width: 100%;
-      box-sizing: border-box;
-      padding: 8px;
-      margin-bottom: 8px;
-      background: var(--bg3);
-      border: 1px solid var(--border);
-      color: var(--text);
-      font-family: var(--font-mono);
-      border-radius: 4px;
-    }
-
-    .admin-input:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
-
-    .admin-note {
-      font-size: 11px;
-      color: var(--dim);
-      margin-top: 8px;
-      line-height: 1.4;
-    }
-
-    #chat-color-btn {
-      width: 40px;
-      height: 36px;
-      padding: 0;
-      border: 1px solid var(--border);
-      background: var(--bg3);
-      cursor: pointer;
-      border-radius: 4px;
-      transition: border-color 0.2s;
-    }
-
-    #chat-color-btn:hover {
-      border-color: var(--accent);
-    }
-
-    #chat-color-swatch {
-      display: block;
-      width: 100%;
-      height: 100%;
-      border-radius: 3px;
-    }
-
-    #chat-color-popup {
-      position: absolute;
-      left: 0;
-      top: 44px;
-      z-index: 20;
-      display: none;
-    }
-
-    .color-popup-inner {
-      background: var(--bg);
-      border: 1px solid var(--border);
-      padding: 12px;
-      border-radius: 8px;
-      box-shadow: 0 6px 30px rgba(0,0,0,0.6);
-      min-width: 220px;
-    }
-
-    .color-swatches {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 12px;
-    }
-
-    .swatch {
-      width: 32px;
-      height: 32px;
-      border-radius: 6px;
-      border: 1px solid var(--border);
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .swatch:hover {
-      transform: scale(1.1);
-      box-shadow: 0 0 10px rgba(255,255,255,0.2);
-    }
-
-    .color-controls {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-
-    #chat-color-native {
-      width: 50px;
-      height: 36px;
-      padding: 0;
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      background: var(--bg3);
-      cursor: pointer;
-    }
-
-    .note {
-      font-size: 12px;
-      color: var(--dim);
-      margin-top: 12px;
-      font-style: italic;
+    
+    #settings-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7); z-index: 999; display: none;
     }
   </style>
 </head>
 <body>
-  <div class="site-wrapper">
-    <header>
-      <h1 class="site-title">GUNKY<span>ZONE</span></h1>
-      <nav>
-        <a href="index.html">home</a>
-        <a href="comics.html">comics</a>
-        <a href="drawings.html">drawings</a>
-        <a href="chat-github.html" class="active">chat</a>
-        <a href="about.html">about</a>
-      </nav>
-    </header>
-    <div class="chat-room" id="chat-room">
-      <div class="chat-header">
-        <div class="chat-title">~ messages ~</div>
-        <button type="button" id="chat-admin-btn" title="Admin">⋯</button>
-      </div>
-      <div class="chat-messages" id="chat-messages" aria-live="polite"></div>
-      <form id="chat-form" class="chat-form">
-        <div style="position: relative;">
-          <button type="button" id="chat-color-btn" title="Choose name color">
-            <span id="chat-color-swatch" style="background: #cc0000;"></span>
-          </button>
-          <div id="chat-color-popup">
-            <div class="color-popup-inner">
-              <div class="color-swatches">
-                <button type="button" class="swatch" data-color="#cc0000" style="background: #cc0000;"></button>
-                <button type="button" class="swatch" data-color="#ff8a00" style="background: #ff8a00;"></button>
-                <button type="button" class="swatch" data-color="#ffd166" style="background: #ffd166;"></button>
-                <button type="button" class="swatch" data-color="#8affc1" style="background: #8affc1;"></button>
-                <button type="button" class="swatch" data-color="#66b2ff" style="background: #66b2ff;"></button>
-                <button type="button" class="swatch" data-color="#d39bff" style="background: #d39bff;"></button>
-              </div>
-              <div class="color-controls">
-                <input id="chat-color-native" type="color" value="#cc0000">
-                <button type="button" id="chat-color-close" class="admin-btn admin-btn-primary" style="margin: 0;">Done</button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <input type="text" id="chat-name" placeholder="name" maxlength="24" aria-label="Your name">
-        <input type="text" id="chat-text" placeholder="say something…" aria-label="Your message">
-        <input type="submit" value="send">
-      </form>
-      <p class="note">Messages are stored in Firebase Realtime Database and visible to all visitors.</p>
-      <div id="chat-admin-panel">
-        <div class="admin-panel-title">Admin Sign In</div>
-        <button id="chat-admin-google" class="admin-btn admin-btn-google">Sign in with Google</button>
-        <div id="chat-admin-fallback">
-          <input id="chat-admin-email" class="admin-input" placeholder="Email" type="email">
-          <input id="chat-admin-pw" class="admin-input" type="password" placeholder="Password">
-          <button id="chat-admin-email-btn" class="admin-btn admin-btn-primary">Sign in with Email</button>
-        </div>
-        <div class="admin-note">Admin access requires Firebase Authentication.</div>
-      </div>
-    </div>
+
+<div id="chat-container">
+  <div id="messages-container">
+    <div class="msg"><span class="msg-author">SYSTEM:</span> ESTABLISHING_LINK...</div>
   </div>
 
-  <script>
-  // Firebase config
-  window.FIREBASE_CONFIG = {
+  <div class="input-wrap">
+    <input type="text" id="name-input" placeholder="ANON" maxlength="10">
+    <input type="text" id="chat-input" placeholder="ENTER MESSAGE..." autocomplete="off">
+    <button id="settings-btn">⚙</button>
+  </div>
+</div>
+
+<div id="settings-overlay"></div>
+<div id="settings-panel">
+  <div class="setting-row">
+    <label>Name:</label>
+    <input type="text" id="settings-name" maxlength="10" style="background: var(--bg2); border: 1px solid var(--border); color: var(--text); padding: 5px; font-family: var(--font-mono);">
+  </div>
+  <div class="setting-row">
+    <label>Color:</label>
+    <input type="color" id="color-picker" value="#ff0000">
+  </div>
+  <div class="setting-row">
+    <label>Style:</label>
+    <select id="style-select">
+      <option value="normal">Normal</option>
+      <option value="bold">Bold</option>
+      <option value="italic">Italic</option>
+    </select>
+  </div>
+  <button id="close-settings">CLOSE</button>
+</div>
+
+<script>
+  const firebaseConfig = {
     apiKey: "AIzaSyD1L4Mmgnbl0W7lk1rnaRu5wv61TSFhJqM",
     authDomain: "gunkychat.firebaseapp.com",
     databaseURL: "https://gunkychat-default-rtdb.firebaseio.com",
     projectId: "gunkychat",
     storageBucket: "gunkychat.firebasestorage.app",
     messagingSenderId: "423489767287",
-    appId: "1:423489767287:web:ce847768781b0f589dc372",
-    measurementId: "G-W7VBG0GSV9"
+    appId: "1:423489767287:web:ce847768781b0f589dc372"
   };
 
-  // Admin config
-  window.CHAT_ADMIN = {
-    adminUIDs: ['WOJYZPdgZpea2ZE1EjwPiBU5p5a2']
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database().ref('gunky_chat');
+  const msgContainer = document.getElementById('messages-container');
+  const chatInput = document.getElementById('chat-input');
+  const nameInput = document.getElementById('name-input');
+
+  let userSettings = {
+    name: localStorage.getItem('chat-name') || 'ANON',
+    color: localStorage.getItem('chat-color') || '#ff0000',
+    style: localStorage.getItem('chat-style') || 'normal'
   };
-  </script>
 
-  <script>
-  (function(){
-    'use strict';
+  nameInput.value = userSettings.name;
+  document.getElementById('settings-name').value = userSettings.name;
+  document.getElementById('color-picker').value = userSettings.color;
+  document.getElementById('style-select').value = userSettings.style;
 
-    var KEY = 'gunky_chat_msgs';
-    var MAX = 200;
-    var DEFAULT_COLOR = '#cc0000';
+  const settingsBtn = document.getElementById('settings-btn');
+  const settingsPanel = document.getElementById('settings-panel');
+  const settingsOverlay = document.getElementById('settings-overlay');
+  const closeSettings = document.getElementById('close-settings');
+
+  settingsBtn.addEventListener('click', () => {
+    settingsPanel.style.display = 'block';
+    settingsOverlay.style.display = 'block';
+  });
+
+  closeSettings.addEventListener('click', () => {
+    settingsPanel.style.display = 'none';
+    settingsOverlay.style.display = 'none';
     
-    var messagesEl = document.getElementById('chat-messages');
-    var form = document.getElementById('chat-form');
-    var nameIn = document.getElementById('chat-name');
-    var textIn = document.getElementById('chat-text');
-    var colorNative = document.getElementById('chat-color-native');
-    var colorBtn = document.getElementById('chat-color-btn');
-    var colorPopup = document.getElementById('chat-color-popup');
-    var colorSwatch = document.getElementById('chat-color-swatch');
-    var colorClose = document.getElementById('chat-color-close');
-    var adminBtn = document.getElementById('chat-admin-btn');
-    var adminPanel = document.getElementById('chat-admin-panel');
+    userSettings.name = document.getElementById('settings-name').value || 'ANON';
+    userSettings.color = document.getElementById('color-picker').value;
+    userSettings.style = document.getElementById('style-select').value;
     
-    var firebaseRef = null;
-    var currentUser = null;
-    var isAdmin = (localStorage.getItem('gunky_chat_is_admin') === '1');
-    var lastSentTs = null;
-    var FORCE_LOCAL = (localStorage.getItem('gunky_chat_force_local') === '1');
+    localStorage.setItem('chat-name', userSettings.name);
+    localStorage.setItem('chat-color', userSettings.color);
+    localStorage.setItem('chat-style', userSettings.style);
+    
+    nameInput.value = userSettings.name;
+  });
 
-    function safeParse(v) {
-      try { return JSON.parse(v || '[]'); }
-      catch(e) { return []; }
-    }
+  settingsOverlay.addEventListener('click', () => {
+    closeSettings.click();
+  });
 
-    function testLocalStorage() {
-      try {
-        localStorage.setItem('__test__', '1');
-        localStorage.removeItem('__test__');
-        return true;
-      } catch(e) {
-        console.warn('localStorage not available:', e);
-        return false;
-      }
-    }
-
-    var hasLocalStorage = testLocalStorage();
-    console.log('localStorage available:', hasLocalStorage);
-
-    function loadLocal() {
-      if (!hasLocalStorage) return [];
-      return safeParse(localStorage.getItem(KEY));
-    }
-
-    function saveLocal(msgs) {
-      if (!hasLocalStorage) return;
-      try { localStorage.setItem(KEY, JSON.stringify(msgs)); }
-      catch(e) { console.warn('localStorage save failed', e); }
-    }
-
-    function renderMessages(msgs) {
-      if (!Array.isArray(msgs)) msgs = [];
-      messagesEl.innerHTML = '';
+  db.limitToLast(50).on('value', (snapshot) => {
+    msgContainer.innerHTML = ""; 
+    snapshot.forEach((child) => {
+      const data = child.val();
+      const div = document.createElement('div');
+      div.className = 'msg';
       
-      if (msgs.length === 0) {
-        var emptyMsg = document.createElement('div');
-        emptyMsg.style.color = 'var(--dim)';
-        emptyMsg.style.textAlign = 'center';
-        emptyMsg.style.padding = '20px';
-        emptyMsg.textContent = 'No messages yet. Be the first to say something!';
-        messagesEl.appendChild(emptyMsg);
-        return;
-      }
+      const authorSpan = document.createElement('span');
+      authorSpan.className = 'msg-author';
+      authorSpan.textContent = (data.author || 'ANON') + ':';
+      authorSpan.style.color = data.color || '#ff0000';
       
-      msgs.forEach(function(m) {
-        if (!m || m.deleted) return;
-
-        var wrap = document.createElement('div');
-        wrap.className = 'chat-msg';
-        
-        var author = document.createElement('div');
-        author.className = 'chat-author';
-        author.textContent = m.author || 'anon';
-        
-        var ts = document.createElement('span');
-        ts.className = 'chat-ts';
-        ts.textContent = new Date(m.ts || Date.now()).toLocaleTimeString();
-        author.appendChild(ts);
-        
-        var savedColor = localStorage.getItem('gunky_chat_name_color') || DEFAULT_COLOR;
-        author.style.color = m.color || savedColor;
-        
-        if (isAdmin) {
-          var delBtn = document.createElement('button');
-          delBtn.className = 'chat-delete-btn';
-          delBtn.textContent = '×';
-          delBtn.title = 'Delete message';
-          delBtn.addEventListener('click', function() {
-            handleDelete(m);
-          });
-          author.appendChild(delBtn);
-        }
-        
-        var text = document.createElement('div');
-        text.className = 'chat-text';
-        text.textContent = m.text || '';
-        
-        wrap.appendChild(author);
-        wrap.appendChild(text);
-        
-        if (lastSentTs && m.ts === lastSentTs) {
-          wrap.classList.add('msg-sent');
-          setTimeout(function() { lastSentTs = null; }, 1600);
-        }
-        
-        messagesEl.appendChild(wrap);
-      });
+      const textSpan = document.createElement('span');
+      textSpan.textContent = data.text || '';
+      if (data.style === 'bold') textSpan.style.fontWeight = 'bold';
+      if (data.style === 'italic') textSpan.style.fontStyle = 'italic';
       
-      messagesEl.scrollTop = messagesEl.scrollHeight;
-    }
-
-    function handleDelete(msg) {
-      if (!confirm('Delete this message?')) return;
-      
-      if (msg._key && firebaseRef) {
-        firebaseRef.child(msg._key).remove()
-          .then(function() {
-            console.log('Message deleted');
-          })
-          .catch(function(err) {
-            console.error('Delete failed:', err);
-            alert('Failed to delete message: ' + err.message);
-          });
-      } else {
-        var msgsLocal = loadLocal();
-        var idx = msgsLocal.findIndex(function(mm) {
-          return mm.ts === msg.ts && mm.author === msg.author && mm.text === msg.text;
-        });
-        if (idx > -1) {
-          msgsLocal.splice(idx, 1);
-          saveLocal(msgsLocal);
-          renderMessages(msgsLocal);
-        }
-      }
-    }
-
-    if (colorBtn && colorPopup && colorNative && colorSwatch && colorClose) {
-      colorBtn.addEventListener('click', function(e) {
-        e.stopPropagation();
-        colorPopup.style.display = (colorPopup.style.display === 'block') ? 'none' : 'block';
-      });
-
-      colorPopup.querySelectorAll('.swatch').forEach(function(btn) {
-        btn.addEventListener('click', function() {
-          var c = btn.getAttribute('data-color');
-          colorNative.value = c;
-          colorSwatch.style.background = c;
-          try { localStorage.setItem('gunky_chat_name_color', c); } catch(e) {}
-        });
-      });
-
-      colorNative.addEventListener('input', function() {
-        colorSwatch.style.background = colorNative.value;
-        try { localStorage.setItem('gunky_chat_name_color', colorNative.value); } catch(e) {}
-      });
-
-      colorClose.addEventListener('click', function() {
-        colorPopup.style.display = 'none';
-      });
-
-      document.addEventListener('click', function(e) {
-        if (!colorPopup.contains(e.target) && e.target !== colorBtn) {
-          colorPopup.style.display = 'none';
-        }
-      });
-
-      var savedColor = localStorage.getItem('gunky_chat_name_color');
-      if (savedColor) {
-        colorNative.value = savedColor;
-        colorSwatch.style.background = savedColor;
-      }
-    }
-
-    function toggleAdminPanel() {
-      if (isAdmin) {
-        if (window.firebase && firebase.auth) {
-          firebase.auth().signOut().catch(function() {});
-        }
-        isAdmin = false;
-        localStorage.removeItem('gunky_chat_is_admin');
-        if (adminBtn) adminBtn.title = 'Admin: sign in';
-        renderMessages(loadLocal());
-        return;
-      }
-
-      if (!(window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.apiKey)) {
-        alert('Firebase config required for admin sign-in');
-        return;
-      }
-
-      adminPanel.style.display = (adminPanel.style.display === 'block') ? 'none' : 'block';
-    }
-
-    if (adminBtn) {
-      adminBtn.addEventListener('click', toggleAdminPanel);
-    }
-
-    function setupAdminPanelHandlers() {
-      var googleBtn = adminPanel.querySelector('#chat-admin-google');
-      var emailBtn = adminPanel.querySelector('#chat-admin-email-btn');
-      var emailIn = adminPanel.querySelector('#chat-admin-email');
-      var pwIn = adminPanel.querySelector('#chat-admin-pw');
-
-      function handleAuth(cred) {
-        var user = cred.user;
-        
-        if (window.CHAT_ADMIN && 
-            Array.isArray(window.CHAT_ADMIN.adminUIDs) && 
-            window.CHAT_ADMIN.adminUIDs.indexOf(user.uid) !== -1) {
-          
-          isAdmin = true;
-          localStorage.setItem('gunky_chat_is_admin', '1');
-          if (adminBtn) adminBtn.title = 'Admin: sign out';
-          
-          alert('Admin mode enabled!');
-          adminPanel.style.display = 'none';
-          renderMessages(loadLocal());
-        } else {
-          firebase.auth().signOut().catch(function() {});
-          alert('Not authorized as admin. Your UID: ' + user.uid);
-        }
-      }
-
-      if (googleBtn) {
-        googleBtn.addEventListener('click', function() {
-          if (window.firebase && firebase.auth && firebase.auth().signInWithPopup) {
-            var provider = new firebase.auth.GoogleAuthProvider();
-            firebase.auth().signInWithPopup(provider)
-              .then(handleAuth)
-              .catch(function(err) {
-                console.warn('Google sign-in failed', err);
-                alert('Google sign-in failed: ' + (err && err.message));
-              });
-          } else {
-            alert('Google sign-in not available');
-          }
-        });
-      }
-
-      if (emailBtn) {
-        emailBtn.addEventListener('click', function() {
-          var email = (emailIn.value || '').trim();
-          var pw = (pwIn.value || '').trim();
-          
-          if (!email || !pw) {
-            alert('Please enter email and password');
-            return;
-          }
-          
-          firebase.auth().signInWithEmailAndPassword(email, pw)
-            .then(handleAuth)
-            .catch(function(err) {
-              console.warn('Email sign-in failed', err);
-              alert('Sign-in failed: ' + (err && err.message));
-            });
-        });
-      }
-    }
-
-    setupAdminPanelHandlers();
-
-    function enableLocalMode() {
-      console.info('Chat: using localStorage fallback');
-      var msgs = loadLocal();
-      console.log('Loaded messages from localStorage:', msgs);
-      renderMessages(msgs);
-    }
-
-    // Initial render from localStorage
-    console.log('Chat app initializing...');
-    renderMessages(loadLocal());
-
-    if (!FORCE_LOCAL && window.FIREBASE_CONFIG && window.FIREBASE_CONFIG.databaseURL) {
-      function loadScript(src, cb) {
-        var s = document.createElement('script');
-        s.src = src;
-        s.onload = cb;
-        s.onerror = function() {
-          console.error('Failed to load script:', src);
-          enableLocalMode();
-        };
-        s.async = true;
-        document.head.appendChild(s);
-      }
-
-      loadScript('https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js', function() {
-        console.log('Firebase app loaded');
-        loadScript('https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js', function() {
-          console.log('Firebase auth loaded');
-          loadScript('https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js', function() {
-            console.log('Firebase database loaded');
-            try {
-              firebase.initializeApp(window.FIREBASE_CONFIG);
-              console.log('Firebase initialized');
-              
-              // Set up database listener FIRST
-              firebaseRef = firebase.database().ref('/gunky_chat');
-              console.log('Firebase ref created:', firebaseRef.path);
-              
-              firebaseRef.on('value', function(snap) {
-                console.log('Firebase listener triggered');
-                var raw = snap.val() || {};
-                var list = [];
-                
-                console.log('Firebase snapshot received:', raw);
-                
-                if (Array.isArray(raw)) {
-                  list = raw.map(function(v, i) {
-                    v._key = i;
-                    return v;
-                  });
-                } else {
-                  list = Object.keys(raw).map(function(k) {
-                    var v = raw[k];
-                    v._key = k;
-                    return v;
-                  });
-                }
-                
-                // Sort by timestamp
-                list.sort(function(a, b) {
-                  return (a.ts || 0) - (b.ts || 0);
-                });
-                
-                console.log('Processed messages:', list);
-                
-                try {
-                  var plain = list.map(function(m) {
-                    var o = Object.assign({}, m);
-                    delete o._key;
-                    return o;
-                  });
-                  localStorage.setItem(KEY, JSON.stringify(plain));
-                } catch(e) {
-                  console.warn('localStorage save failed', e);
-                }
-                
-                renderMessages(list);
-              }, function(err) {
-                console.error('Firebase listener error:', err);
-              });
-
-              console.info('Chat: Firebase realtime enabled');
-              
-              // Then set up auth listener
-              firebase.auth().onAuthStateChanged(function(user) {
-                currentUser = user;
-                
-                if (user && 
-                    window.CHAT_ADMIN && 
-                    Array.isArray(window.CHAT_ADMIN.adminUIDs) && 
-                    window.CHAT_ADMIN.adminUIDs.indexOf(user.uid) !== -1) {
-                  
-                  isAdmin = true;
-                  localStorage.setItem('gunky_chat_is_admin', '1');
-                  if (adminBtn) adminBtn.title = 'Admin: sign out';
-                  console.info('Chat: admin authenticated', user.uid);
-                } else {
-                  isAdmin = false;
-                  localStorage.removeItem('gunky_chat_is_admin');
-                  if (adminBtn) adminBtn.title = 'Admin: sign in';
-                }
-              });
-              
-            } catch(err) {
-              console.warn('Chat: firebase init error', err);
-              enableLocalMode();
-            }
-          });
-        });
-      });
-    } else {
-      enableLocalMode();
-    }
-
-    form.addEventListener('submit', function(e) {
-      e.preventDefault();
-      
-      var name = (nameIn.value || '').trim() || 'anon';
-      var text = (textIn.value || '').trim();
-      var chosenColor = (colorNative && colorNative.value) || 
-                       (localStorage.getItem('gunky_chat_name_color') || DEFAULT_COLOR);
-      
-      try {
-        localStorage.setItem('gunky_chat_name_color', chosenColor);
-      } catch(e) {}
-      
-      if (!text) {
-        alert('Please enter a message');
-        return;
-      }
-      
-      var tsVal = Date.now();
-      lastSentTs = tsVal;
-      
-      var msgObj = {
-        author: name,
-        text: text,
-        ts: tsVal,
-        color: chosenColor
-      };
-      
-      if (firebaseRef) {
-        console.log('Sending to Firebase:', msgObj);
-        try {
-          firebaseRef.push(msgObj);
-          textIn.value = '';
-          console.log('Message sent to Firebase');
-        } catch(e) {
-          console.warn('Chat: firebase write failed', e);
-          alert('Failed to send message: ' + e.message);
-        }
-      } else {
-        console.log('Firebase not available, saving locally:', msgObj);
-        var msgs = loadLocal();
-        msgs.push(msgObj);
-        
-        if (msgs.length > MAX) {
-          msgs.splice(0, msgs.length - MAX);
-        }
-        
-        saveLocal(msgs);
-        textIn.value = '';
-        renderMessages(msgs);
-        console.log('Message saved locally');
-      }
+      div.appendChild(authorSpan);
+      div.appendChild(textSpan);
+      msgContainer.appendChild(div);
     });
+    msgContainer.scrollTop = msgContainer.scrollHeight;
+  });
 
-  })();
-  </script>
+  function sendMessage() {
+    const text = chatInput.value.trim();
+    if (text !== "") {
+      db.push({
+        author: userSettings.name,
+        text: text,
+        color: userSettings.color,
+        style: userSettings.style,
+        timestamp: Date.now()
+      });
+      chatInput.value = "";
+    }
+  }
+
+  chatInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') sendMessage();
+  });
+</script>
 </body>
 </html>
