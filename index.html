@@ -114,7 +114,11 @@
       60% { transform: translate(2px, 2px); }
       80% { transform: translate(2px, -2px); }
     }
-    .site-subtitle { font-family: var(--font-body); font-style: italic; color: var(--dim); font-size: 14px; margin-top: 10px; animation: fadeIn 0.8s ease-out 0.3s both; }
+    .site-subtitle { 
+      font-family: var(--font-body); font-style: italic; color: var(--dim); 
+      font-size: 14px; margin-top: 10px; 
+      animation: fadeIn 0.8s ease-out 0.3s both; 
+    }
 
     nav { display: flex; margin-top: 28px; border: 1px solid var(--border); width: fit-content; }
     nav a {
@@ -171,12 +175,24 @@
       height: 1px;
       background: var(--border);
     }
-    .section-label:nth-of-type(2) { animation-delay: 0.6s; }
-    .section-label:nth-of-type(3) { animation-delay: 0.8s; }
-    .section-label:nth-of-type(4) { animation-delay: 1s; }
+
+    .content-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+
+    .chat-column {
+      min-width: 0;
+    }
+
+    .content-column {
+      min-width: 0;
+    }
 
     .chat-wrap {
-      max-width: 680px;
+      max-width: 100%;
       overflow: hidden;
       animation: fadeIn 0.8s ease-out 1.2s both;
     }
@@ -184,7 +200,7 @@
     .chat-wrap iframe {
       display: block;
       width: 100%;
-      height: 700px;
+      height: 600px;
       border: none;
       background: #060606;
       scrollbar-width: none;
@@ -195,11 +211,11 @@
     }
 
     .featured-item {
-      border: 2px solid var(--accent);
-      padding: 20px;
-      background: linear-gradient(135deg, rgba(155, 0, 0, 0.1), transparent);
-      border-radius: 8px;
-      margin-bottom: 20px;
+      border: 1px solid var(--accent);
+      padding: 16px 20px;
+      background: linear-gradient(135deg, rgba(155, 0, 0, 0.08), transparent);
+      border-radius: 6px;
+      margin-bottom: 16px;
       animation: fadeIn 0.8s ease-out 0.7s both;
       position: relative;
       overflow: hidden;
@@ -208,36 +224,36 @@
     .featured-item::before {
       content: '★';
       position: absolute;
-      top: 10px;
-      right: 15px;
-      font-size: 24px;
+      top: 8px;
+      right: 12px;
+      font-size: 18px;
       color: var(--accent);
-      opacity: 0.3;
+      opacity: 0.25;
     }
 
     .featured-item h3 {
       color: var(--accent);
       font-family: var(--font-disp);
-      font-size: 18px;
-      margin-bottom: 8px;
+      font-size: 16px;
+      margin-bottom: 6px;
       letter-spacing: 1px;
     }
 
     .featured-item p {
       color: var(--text);
-      font-size: 13px;
-      margin-bottom: 12px;
-      line-height: 1.6;
+      font-size: 12px;
+      margin-bottom: 10px;
+      line-height: 1.5;
     }
 
     .featured-item a {
       display: inline-block;
-      padding: 8px 16px;
+      padding: 6px 12px;
       border: 1px solid var(--accent);
       background: transparent;
       color: var(--accent);
-      border-radius: 4px;
-      font-size: 12px;
+      border-radius: 3px;
+      font-size: 11px;
       transition: all 0.2s;
       text-transform: uppercase;
       letter-spacing: 1px;
@@ -248,22 +264,76 @@
       color: var(--bg);
     }
 
-    footer {
-      border-top: 1px solid var(--border); padding: 24px 0;
-      display: flex; justify-content: space-between; align-items: center;
-      font-size: 11px; color: var(--dim);
-    }
-    .footer-badges { display: flex; gap: 8px; }
-    .badge {
-      display: inline-block; border: 1px solid var(--border);
-      padding: 3px 8px; font-size: 10px; color: var(--dim);
-      letter-spacing: 1px; text-transform: uppercase;
+    .content-column .recent-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      animation: fadeIn 0.8s ease-out forwards;
     }
 
-    .recent-section {
-      margin-top: 40px;
+    .content-column .recent-item {
+      width: 100%;
+      height: 140px;
+      border: 1px solid var(--border);
+      background: var(--bg2);
+      border-radius: 6px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+      display: flex;
+      gap: 12px;
+      padding: 12px;
+      flex-shrink: 0;
     }
 
+    .content-column .recent-item-thumb {
+      width: 100px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+      background: var(--bg3);
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .content-column .recent-item-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .content-column .recent-item-info h3 {
+      font-size: 12px;
+      color: var(--accent);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .content-column .recent-item-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.4s ease;
+      filter: brightness(0.9);
+    }
+
+    .content-column .recent-item:hover .recent-item-thumb img {
+      transform: scale(1.1);
+      filter: brightness(1.1);
+    }
+
+    .content-column .recent-item:hover {
+      border-color: var(--accent);
+      box-shadow: 0 0 15px rgba(155, 0, 0, 0.2);
+    }
+
+    /* Full-width recent grid for drawings */
     .recent-grid {
       display: flex;
       overflow-x: auto;
@@ -353,6 +423,29 @@
       border-color: var(--accent);
       box-shadow: 0 0 15px rgba(155, 0, 0, 0.2);
     }
+
+    @media (max-width: 768px) {
+      .content-layout {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+      
+      .chat-wrap iframe {
+        height: 500px;
+      }
+    }
+
+    footer {
+      border-top: 1px solid var(--border); padding: 24px 0;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 11px; color: var(--dim);
+    }
+    .footer-badges { display: flex; gap: 8px; }
+    .badge {
+      display: inline-block; border: 1px solid var(--border);
+      padding: 3px 8px; font-size: 10px; color: var(--dim);
+      letter-spacing: 1px; text-transform: uppercase;
+    }
   </style>
 </head>
 <body>
@@ -376,25 +469,31 @@
       <p>Welcome to the gunky zone. A place for comics, drawings, and other creative experiments. Everything here is hand-coded with love and a healthy disregard for modern web standards.</p>
     </div>
 
-    <div class="section-label">Featured</div>
-    <div id="featured-section"></div>
+    <div class="content-layout">
+      <div class="chat-column">
+        <div class="section-label">Live Chat</div>
+        <div class="chat-wrap">
+          <iframe
+            src="chat-github.html?chat-only"
+            title="GunkyZone chat"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            sandbox="allow-same-origin allow-scripts allow-popups allow-forms">
+          </iframe>
+        </div>
+      </div>
 
-    <div class="section-label">Recent Comics</div>
-    <div id="recent-comics"></div>
+      <div class="content-column">
+        <div class="section-label">Featured</div>
+        <div id="featured-section"></div>
+
+        <div class="section-label">Recent Comics</div>
+        <div id="recent-comics"></div>
+      </div>
+    </div>
 
     <div class="section-label">Recent Drawings</div>
     <div id="recent-drawings"></div>
-
-    <div class="section-label">Live Chat</div>
-    <div class="chat-wrap">
-      <iframe
-        src="chat-github.html?chat-only"
-        title="GunkyZone chat"
-        loading="lazy"
-        referrerpolicy="no-referrer-when-downgrade"
-        sandbox="allow-same-origin allow-scripts allow-popups allow-forms">
-      </iframe>
-    </div>
 
     <div id="comic-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; padding: 20px;">
       <button onclick="closeComicModal()" style="position: absolute; top: 20px; right: 20px; padding: 10px 20px; background: #9b0000; color: white; border: none; cursor: pointer; border-radius: 4px; font-family: 'Share Tech Mono', monospace;">Close</button>
@@ -506,9 +605,9 @@
           if (featuredEl) featuredEl.innerHTML = featuredHtml;
         }
 
-        // Show recent comics
+        // Show recent comics (in content column)
         if (comics.length > 0) {
-          // Sort oldest first so newest appears on the right
+          // Sort oldest first so newest appears on the right for horizontal scroll
           comics.sort(function(a, b) { return a.uploadedAt - b.uploadedAt; });
           
           var comicsHtml = '<div class="recent-grid">';
@@ -529,7 +628,7 @@
           }
         }
 
-        // Show recent drawings
+        // Show recent drawings (full width)
         if (drawings.length > 0) {
           var drawingsHtml = '<div class="recent-grid">';
           for (var i = 0; i < Math.min(3, drawings.length); i++) {
