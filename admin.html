@@ -54,6 +54,24 @@
 <div class="container" id="admin-panel" style="display:none">
   <h1>GUNKY_SYSTEM_CONTROL</h1>
   
+  <div class="entry-list" style="margin-bottom: 30px;">
+    <h2 style="color:var(--dim)">SITE_TEXT_CONFIG</h2>
+    <div class="form-group">
+      <label>MOOD_STATUS</label>
+      <input type="text" id="t-mood" placeholder="e.g. STABLE">
+    </div>
+    <div class="form-group">
+      <label>WELCOME_MESSAGE</label>
+      <input type="text" id="t-welcome" placeholder="e.g. System ready.">
+    </div>
+    <div class="form-group">
+      <label>FOOTER_TEXT</label>
+      <input type="text" id="t-footer" placeholder="e.g. © 2025 GUNKY_SYSTEMS. DATA_PORT: SECURE.">
+    </div>
+    <button onclick="updateSiteText()">UPDATE_TEXT</button>
+  </div>
+
+  <h2 style="color:var(--dim); border-bottom: 1px solid var(--border); padding-bottom: 10px;">MEDIA_UPLOAD</h2>
   <div class="form-group">
     <label>CATEGORY</label>
     <select id="media-type">
@@ -63,18 +81,18 @@
   </div>
   
   <div class="form-group">
-    <label>ENTRY_TITLE</label>
-    <input type="text" id="m-title" placeholder="e.g. TEAR3">
+    <label>ENTRY_TITLE (Display Name)</label>
+    <input type="text" id="m-title" placeholder="e.g. COMING NEXT">
   </div>
   
   <div class="form-group">
     <label>FILE_URL (PDF or Image)</label>
-    <input type="text" id="m-url" placeholder="comics/file.pdf or drawings/image.png">
+    <input type="text" id="m-url" placeholder="e.g. drawings/TEAR3preview.png">
   </div>
   
   <div class="form-group">
     <label>THUMBNAIL_URL (Required for grid)</label>
-    <input type="text" id="m-thumb" placeholder="thumbnails/thumb.png">
+    <input type="text" id="m-thumb" placeholder="e.g. thumbnails/TEAR3preview_thumb.png">
   </div>
 
   <button onclick="uploadMedia()">DEPLOY_TO_SITE</button>
@@ -103,13 +121,37 @@
 
   function checkAuth() {
     // Basic local check for you
-    if(document.getElementById('admin-pass').value === 'gunky2026') {
+    if(document.getElementById('admin-pass').value === 'LoveyDovey6833*') {
       document.getElementById('login-box').style.display = 'none';
       document.getElementById('admin-panel').style.display = 'block';
       loadEntries();
+      loadSiteText();
     } else {
       alert("UNAUTHORIZED");
     }
+  }
+
+  function loadSiteText() {
+    db.ref('site_text').once('value').then(snap => {
+      const data = snap.val() || {};
+      document.getElementById('t-mood').value = data.mood || 'STABLE';
+      document.getElementById('t-welcome').value = data.working_on || 'System ready.';
+      document.getElementById('t-footer').value = data.footer || '© 2025 GUNKY_SYSTEMS. DATA_PORT: SECURE.';
+    });
+  }
+
+  function updateSiteText() {
+    const mood = document.getElementById('t-mood').value;
+    const welcome = document.getElementById('t-welcome').value;
+    const footer = document.getElementById('t-footer').value;
+
+    db.ref('site_text').set({
+      mood: mood,
+      working_on: welcome,
+      footer: footer
+    }).then(() => {
+      alert("TEXT_UPDATED_SUCCESSFULLY");
+    });
   }
 
   function uploadMedia() {

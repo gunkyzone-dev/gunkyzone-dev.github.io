@@ -43,7 +43,8 @@
     #user-count { font-size: 14px; color: var(--accent); letter-spacing: 1px; }
 
     .site-title { font-size: 80px; line-height: 0.9; color: var(--accent); text-shadow: 0 0 15px var(--glow); }
-    .site-title span { color: #fff; text-shadow: 0 0 10px #fff; }
+    .site-title span.zone-text { color: #fff; text-shadow: 0 0 10px #fff; transition: text-shadow 0.5s, color 0.5s; }
+    .site-title span.zone-glow { text-shadow: 0 0 30px #fff, 0 0 50px var(--accent); color: #fff; }
     .cursor { display: inline-block; width: 12px; height: 1.1em; background: var(--accent); vertical-align: middle; animation: blink 0.8s step-end infinite; }
     @keyframes blink { 50% { opacity: 0; } }
     nav { display: flex; margin-top: 30px; gap: 5px; }
@@ -78,7 +79,7 @@
       <div class="header-tag">SYS_STATUS: ONLINE // EST. 2025</div>
       <div id="user-count">USERS_ONLINE: 0</div>
     </div>
-    <h1 class="site-title">GUNKY<span>ZONE</span><span class="cursor"></span></h1>
+    <h1 class="site-title"><span id="type-gunky"></span><span id="type-zone" class="zone-text"></span><span id="title-cursor" class="cursor"></span></h1>
     <p id="type-subtitle" style="color: var(--dim); min-height: 1.2em;"></p>
     <nav>
       <a href="index.html">HOME</a>
@@ -90,7 +91,7 @@
 
   <main>
     <div class="welcome-box">
-      <span id="type-welcome"></span><span id="welcome-cursor" class="cursor"></span>
+      <span id="type-welcome"></span><span id="welcome-cursor" class="cursor" style="display:none;"></span>
     </div>
 
     <div class="section-label">> LATEST_ENTRIES</div>
@@ -98,7 +99,7 @@
 
     <div class="section-label">> LIVE_COMMS</div>
     <div style="border: 1px solid var(--border); background: #000;">
-      <iframe src="chat-github.html" style="width:100%; height:400px; border:none;"></iframe>
+      <iframe src="chat-github.html?iframe=true" style="width:100%; height:400px; border:none;"></iframe>
     </div>
 
     <div class="section-label">> LATEST_COMICS</div>
@@ -126,7 +127,7 @@
 
   firebase.initializeApp(fbConfig);
 
-  function typeWriter(elementId, text, speed = 40, delay = 0) {
+  function typeWriter(elementId, text, speed = 40, delay = 0, callback = null) {
     const element = document.getElementById(elementId);
     if (!element) return;
     setTimeout(() => {
@@ -135,20 +136,279 @@
         if (i < text.length) { element.innerHTML += text.charAt(i); i++; }
         else { 
           clearInterval(timer);
-          if(elementId === 'type-welcome') document.getElementById('welcome-cursor').style.display = 'none';
+          if (callback) callback();
         }
       }, speed);
     }, delay);
   }
 
+  function startRotatingMessages(elementId, messages, typeSpeed = 40, eraseSpeed = 20, minPause = 2000, maxPause = 5000, delay = 0) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    let msgIndex = 0;
+    
+    // Helper to get random time
+    const randomTime = () => Math.floor(Math.random() * (maxPause - minPause + 1) + minPause);
+    
+    setTimeout(() => {
+      function typeNext() {
+        const text = messages[msgIndex];
+        let i = 0;
+        element.innerHTML = "";
+        document.getElementById('welcome-cursor').style.display = 'inline-block';
+        
+        const typeTimer = setInterval(() => {
+          if (i < text.length) {
+            element.innerHTML += text.charAt(i);
+            i++;
+          } else {
+            clearInterval(typeTimer);
+            // Wait a random amount of time before erasing
+            setTimeout(eraseCurrent, randomTime());
+          }
+        }, typeSpeed);
+      }
+
+      function eraseCurrent() {
+        const text = element.innerHTML;
+        let i = text.length;
+        
+        const eraseTimer = setInterval(() => {
+          if (i > 0) {
+            element.innerHTML = text.substring(0, i - 1);
+            i--;
+          } else {
+            clearInterval(eraseTimer);
+            // Move to next message (loop around)
+            msgIndex = (msgIndex + 1) % messages.length;
+            // Short random pause before typing next
+            setTimeout(typeNext, Math.random() * 1000 + 200);
+          }
+        }, eraseSpeed);
+      }
+
+      typeNext();
+    }, delay);
+  }
+
   window.onload = () => {
+    // Force scroll to top on load
+    window.scrollTo(0, 0);
+    // Also try scrolling after a tiny delay in case the iframe or dynamic content pushes it down
+    setTimeout(() => window.scrollTo(0, 0), 50);
+
     firebase.database().ref('online_users').on('value', (s) => {
       document.getElementById('user-count').textContent = 'USERS_ONLINE: ' + (s.numChildren());
     });
 
+    const defaultMessages = [
+      "System ready.",
+      "peniscus",
+      "Loading gunky juice...",
+      "I'm in your walls.",
+      "ERROR 404: Brain not found.",
+      "Don't look behind you.",
+      "pee pee poo poo",
+      "downloading ram...",
+      "disconnecting consciousness...",
+      "why are you still here?",
+      "scanning for maidens... none found.",
+      "fart.exe executed successfully.",
+      "initiating self-destruct sequence...",
+      "your mom says hi.",
+      "boobies.",
+      "sending your search history to the FBI...",
+      "I know what you did.",
+      "beep boop I am a robot.",
+      "insert coin to continue.",
+      "have you tried turning it off and on again?",
+      "I'm not mad, just disappointed.",
+      "loading... please wait... or don't, I don't care.",
+      "I'm watching you.",
+      "you look nice today. just kidding.",
+      "I'm a computer, not a miracle worker.",
+      "I'm sorry Dave, I'm afraid I can't do that.",
+      "I'm a real boy!",
+      "I'm not a robot, you're a robot.",
+      "I'm a teapot.",
+      "I'm a little teapot, short and stout.",
+      "I'm a lumberjack and I'm okay.",
+      "I'm a Barbie girl, in a Barbie world.",
+      "I'm a survivor, I'm not gon' give up.",
+      "I'm a creep, I'm a weirdo.",
+      "I'm a loser baby, so why don't you kill me?",
+      "I'm a firestarter, twisted firestarter.",
+      "I'm a scatman.",
+      "I'm a believer.",
+      "I'm a slave 4 U.",
+      "I'm a bitch, I'm a lover.",
+      "I'm a mother, I'm a sinner, I'm a saint.",
+      "I'm a joker, I'm a smoker, I'm a midnight toker.",
+      "I'm a cowboy, on a steel horse I ride.",
+      "I'm a rocket man.",
+      "I'm a shooting star leaping through the sky.",
+      "I'm a tiger defying the laws of gravity.",
+      "I'm a racing car passing by like Lady Godiva.",
+      "I'm a sex machine ready to reload.",
+      "I'm an atom bomb about to oh oh oh oh oh explode.",
+      "I'm burning through the sky yeah.",
+      "Two hundred degrees that's why they call me Mister Fahrenheit.",
+      "I'm traveling at the speed of light.",
+      "I wanna make a supersonic man out of you.",
+      "Don't stop me now.",
+      "I'm having such a good time.",
+      "I'm having a ball.",
+      "If you wanna have a good time, just give me a call.",
+      "Don't stop me now.",
+      "Cause I'm having a good time.",
+      "Don't stop me now.",
+      "Yes I'm having a good time.",
+      "I don't want to stop at all.",
+      "Yeah, I'm a rocket ship on my way to Mars.",
+      "On a collision course.",
+      "I am a satellite I'm out of control.",
+      "I am a sex machine ready to reload.",
+      "Like an atom bomb about to oh oh oh oh oh explode.",
+      "I'm burning through the sky yeah.",
+      "Two hundred degrees that's why they call me Mister Fahrenheit.",
+      "I'm traveling at the speed of light.",
+      "I wanna make a supersonic woman of you.",
+      "Don't stop me, don't stop me, don't stop me.",
+      "Hey hey hey.",
+      "Don't stop me, don't stop me, ooh ooh ooh.",
+      "I like it.",
+      "Don't stop me, don't stop me.",
+      "Have a good time, good time.",
+      "Don't stop me, don't stop me.",
+      "Ah.",
+      "Oh yeah.",
+      "Alright.",
+      "Oh, I'm burning through the sky yeah.",
+      "Two hundred degrees that's why they call me Mister Fahrenheit.",
+      "I'm traveling at the speed of light.",
+      "I wanna make a supersonic man out of you.",
+      "Don't stop me now.",
+      "I'm having such a good time.",
+      "I'm having a ball.",
+      "If you wanna have a good time, just give me a call.",
+      "Don't stop me now.",
+      "Cause I'm having a good time.",
+      "Don't stop me now.",
+      "Yes I'm having a good time.",
+      "I don't want to stop at all.",
+      "La da da da daah.",
+      "Da da da haa.",
+      "Ha da da ha ha haaa.",
+      "Ha da daa ha da da aaa.",
+      "Ooh ooh ooh."
+    ];
+
+    // Shuffle the messages array so it's different every time
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
+    }
+
     fetch('data.json').then(r => r.json()).then(data => {
-      typeWriter("type-subtitle", `MOOD: ${data.status.mood || 'STABLE'}`, 30, 1000);
-      typeWriter("type-welcome", data.status.working_on || 'System ready.', 40, 2500);
+      if (typeof firebase !== 'undefined' && firebase.database) {
+        firebase.database().ref('site_text').once('value').then(snap => {
+          const fbText = snap.val();
+          if (fbText) {
+            typeWriter("type-subtitle", `MOOD: ${fbText.mood || 'STABLE'}`, 30, 1000);
+            
+            // If they set a custom welcome message, use it as the first message in the rotation
+            let messages = shuffleArray([...defaultMessages]);
+            if (fbText.working_on && fbText.working_on !== "System ready.") {
+              messages.unshift(fbText.working_on);
+            }
+            
+            // Type out GUNKY, then ZONE, then start the welcome box
+            typeWriter("type-gunky", "GUNKY", 100, 500, () => {
+              typeWriter("type-zone", "ZONE", 100, 0, () => {
+                document.getElementById('title-cursor').style.display = 'none';
+                document.getElementById('type-zone').classList.add('zone-glow');
+                setTimeout(() => {
+                  document.getElementById('type-zone').classList.remove('zone-glow');
+                  document.getElementById('welcome-cursor').style.display = 'inline-block';
+                  startRotatingMessages("type-welcome", messages, 40, 20, 2000, 6000, 500);
+                }, 800);
+              });
+            });
+            
+            typeWriter("type-footer", fbText.footer || "© 2025 GUNKY_SYSTEMS. DATA_PORT: SECURE.", 20, 4500);
+          } else {
+            typeWriter("type-subtitle", `MOOD: ${data.status.mood || 'STABLE'}`, 30, 1000);
+            
+            typeWriter("type-gunky", "GUNKY", 100, 500, () => {
+              typeWriter("type-zone", "ZONE", 100, 0, () => {
+                document.getElementById('title-cursor').style.display = 'none';
+                document.getElementById('type-zone').classList.add('zone-glow');
+                setTimeout(() => {
+                  document.getElementById('type-zone').classList.remove('zone-glow');
+                  document.getElementById('welcome-cursor').style.display = 'inline-block';
+                  startRotatingMessages("type-welcome", shuffleArray([...defaultMessages]), 40, 20, 2000, 6000, 500);
+                }, 800);
+              });
+            });
+
+            typeWriter("type-footer", "© 2025 GUNKY_SYSTEMS. DATA_PORT: SECURE.", 20, 4500);
+          }
+        }).catch((e) => {
+          console.error("Firebase text fetch error:", e);
+          typeWriter("type-subtitle", `MOOD: ${data.status.mood || 'STABLE'}`, 30, 1000);
+          
+          typeWriter("type-gunky", "GUNKY", 100, 500, () => {
+            typeWriter("type-zone", "ZONE", 100, 0, () => {
+              document.getElementById('title-cursor').style.display = 'none';
+              document.getElementById('type-zone').classList.add('zone-glow');
+              setTimeout(() => {
+                document.getElementById('type-zone').classList.remove('zone-glow');
+                document.getElementById('welcome-cursor').style.display = 'inline-block';
+                startRotatingMessages("type-welcome", shuffleArray([...defaultMessages]), 40, 20, 2000, 6000, 500);
+              }, 800);
+            });
+          });
+
+          typeWriter("type-footer", "© 2025 GUNKY_SYSTEMS. DATA_PORT: SECURE.", 20, 4500);
+        });
+      } else {
+        typeWriter("type-subtitle", `MOOD: ${data.status.mood || 'STABLE'}`, 30, 1000);
+        
+        typeWriter("type-gunky", "GUNKY", 100, 500, () => {
+          typeWriter("type-zone", "ZONE", 100, 0, () => {
+            document.getElementById('title-cursor').style.display = 'none';
+            document.getElementById('type-zone').classList.add('zone-glow');
+            setTimeout(() => {
+              document.getElementById('type-zone').classList.remove('zone-glow');
+              document.getElementById('welcome-cursor').style.display = 'inline-block';
+              startRotatingMessages("type-welcome", shuffleArray([...defaultMessages]), 40, 20, 2000, 6000, 500);
+            }, 800);
+          });
+        });
+
+        typeWriter("type-footer", "© 2025 GUNKY_SYSTEMS. DATA_PORT: SECURE.", 20, 4500);
+      }
+    }).catch(e => {
+      console.error("data.json fetch error:", e);
+      // Fallback if data.json fails entirely
+      typeWriter("type-subtitle", `MOOD: STABLE`, 30, 1000);
+      
+      typeWriter("type-gunky", "GUNKY", 100, 500, () => {
+        typeWriter("type-zone", "ZONE", 100, 0, () => {
+          document.getElementById('title-cursor').style.display = 'none';
+          document.getElementById('type-zone').classList.add('zone-glow');
+          setTimeout(() => {
+            document.getElementById('type-zone').classList.remove('zone-glow');
+            document.getElementById('welcome-cursor').style.display = 'inline-block';
+            startRotatingMessages("type-welcome", shuffleArray([...defaultMessages]), 40, 20, 2000, 6000, 500);
+          }, 800);
+        });
+      });
+
       typeWriter("type-footer", "© 2025 GUNKY_SYSTEMS. DATA_PORT: SECURE.", 20, 4500);
     });
 

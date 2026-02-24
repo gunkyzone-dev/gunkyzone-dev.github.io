@@ -86,9 +86,21 @@
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0,0,0,0.7); z-index: 999; display: none;
     }
+
+    #back-btn {
+      display: none; /* Hidden by default, shown via JS if not in iframe */
+      position: absolute; top: 10px; left: 10px; z-index: 100;
+      background: var(--bg2); border: 1px solid var(--border); color: var(--accent2);
+      padding: 5px 15px; cursor: pointer; font-family: var(--font-mono); font-size: 16px;
+      text-decoration: none; text-transform: uppercase;
+    }
+    #back-btn:hover { color: #fff; background: var(--accent2); animation: jitter 0.2s infinite; text-shadow: 2px 0 var(--accent), -2px 0 #00ffff; }
+    @keyframes jitter { 0% { transform: translate(2px, -1px); } 50% { transform: translate(-1px, 1px); } }
   </style>
 </head>
 <body>
+
+<a href="index.html" id="back-btn">< RETURN</a>
 
 <div id="chat-container">
   <div id="messages-container">
@@ -139,6 +151,15 @@
   const msgContainer = document.getElementById('messages-container');
   const chatInput = document.getElementById('chat-input');
   const nameInput = document.getElementById('name-input');
+
+  // Check if we are in an iframe via query param
+  const urlParams = new URLSearchParams(window.location.search);
+  if (!urlParams.has('iframe')) {
+    // Not in an iframe, show the back button
+    document.getElementById('back-btn').style.display = 'inline-block';
+    // Add some top padding to the chat container so it doesn't overlap the button
+    document.getElementById('chat-container').style.paddingTop = '40px';
+  }
 
   let userSettings = {
     name: localStorage.getItem('chat-name') || 'ANON',
