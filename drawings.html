@@ -32,6 +32,7 @@
       content: ''; position: fixed; inset: 0;
       background: repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(0,0,0,0.18) 2px, rgba(0,0,0,0.18) 4px);
       pointer-events: none; z-index: 1000;
+      display: none;
     }
     body::after {
       content: ''; position: fixed; inset: 0;
@@ -81,6 +82,11 @@
 
     body {
       animation: crtBoot 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+      animation-fill-mode: forwards;
+    }
+    
+    body.loaded {
+      animation: none;
     }
 
     header { border-bottom: 1px solid var(--border); padding: 28px 0 18px; }
@@ -331,6 +337,11 @@
   // Initialize Firebase
   function initFirebase() {
     loadGallery();
+    // Disable scanlines after animation completes
+    setTimeout(function() {
+      document.body.classList.add('loaded');
+      document.body.style.animation = 'none';
+    }, 1000);
   }
 
   initFirebase();
