@@ -23,11 +23,12 @@
       --font-body: 'IM Fell English', serif;
     }
 
-    html { scroll-behavior: smooth; }
+    html { scroll-behavior: smooth; scrollbar-gutter: stable; }
     body {
       background: var(--bg); color: var(--text);
       font-family: var(--font-mono); font-size: 15px;
       line-height: 1.7; min-height: 100vh; overflow-x: hidden;
+      overflow-y: scroll;
     }
     body::before {
       content: ''; position: fixed; inset: 0;
