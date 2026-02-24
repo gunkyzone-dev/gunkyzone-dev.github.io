@@ -38,7 +38,10 @@
     }
     .site-wrapper { max-width: 900px; margin: 0 auto; padding: 0 20px; }
     header { border-bottom: 2px solid var(--border); padding: 40px 0 20px; }
-    .header-tag { font-size: 14px; color: var(--accent2); margin-bottom: 5px; }
+    .header-row { display: flex; justify-content: space-between; align-items: center; }
+    .header-tag { font-size: 14px; color: var(--accent2); }
+    #user-count { font-size: 14px; color: var(--accent); letter-spacing: 1px; }
+
     .site-title { font-size: 80px; line-height: 0.9; color: var(--accent); text-shadow: 0 0 15px var(--glow); }
     .site-title span { color: #fff; text-shadow: 0 0 10px #fff; }
     .cursor { display: inline-block; width: 12px; height: 1.1em; background: var(--accent); vertical-align: middle; animation: blink 0.8s step-end infinite; }
@@ -50,8 +53,9 @@
     .welcome-box { border: 1px solid var(--border); padding: 20px; background: var(--bg2); margin: 30px 0; min-height: 60px; }
     .section-label { color: var(--accent2); font-size: 14px; margin: 40px 0 10px; border-bottom: 1px solid var(--border); }
     .recent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
-    .recent-item { border: 1px solid var(--border); background: #050000; padding: 10px; cursor: pointer; display: flex; gap: 10px; align-items: center; }
-    .recent-item-thumb { width: 80px; height: 80px; background: #111; border: 1px solid #222; }
+    .recent-item { border: 1px solid var(--border); background: #050000; padding: 10px; cursor: pointer; display: flex; gap: 10px; align-items: center; transition: 0.2s; }
+    .recent-item:hover { border-color: var(--accent); background: #1a0000; }
+    .recent-item-thumb { width: 80px; height: 80px; background: #111; border: 1px solid #222; overflow: hidden; }
     .recent-item-thumb img { width: 100%; height: 100%; object-fit: cover; }
     footer { padding: 40px 0; border-top: 1px solid var(--border); color: var(--dim); font-size: 14px; }
   </style>
@@ -59,7 +63,10 @@
 <body>
 <div class="site-wrapper">
   <header>
-    <div class="header-tag">SYS_STATUS: ONLINE // EST. 2025</div>
+    <div class="header-row">
+      <div class="header-tag">SYS_STATUS: ONLINE // EST. 2025</div>
+      <div id="user-count">USERS_ONLINE: 0</div>
+    </div>
     <h1 class="site-title">GUNKY<span>ZONE</span><span class="cursor"></span></h1>
     <p id="type-subtitle" style="color: var(--dim); min-height: 1.2em;"></p>
     <nav>
@@ -76,11 +83,11 @@
     </div>
 
     <div class="section-label">> LATEST_ENTRIES</div>
-    <div id="recent-media" class="recent-grid"></div>
+    <div id="recent-media" class="recent-grid">LOADING_DATA...</div>
 
     <div class="section-label">> LIVE_COMMS</div>
     <div style="border: 1px solid var(--border); background: #000;">
-      <iframe src="chat-github.html?chat-only" style="width:100%; height:400px; border:none; filter: grayscale(1) sepia(1) hue-rotate(-50deg) brightness(0.8);"></iframe>
+      <iframe src="chat-github.html" style="width:100%; height:400px; border:none;"></iframe>
     </div>
   </main>
 
@@ -89,7 +96,22 @@
   </footer>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
 <script>
+  const fbConfig = {
+    apiKey: "AIzaSyD1L4Mmgnbl0W7lk1rnaRu5wv61TSFhJqM",
+    authDomain: "gunkychat.firebaseapp.com",
+    databaseURL: "https://gunkychat-default-rtdb.firebaseio.com",
+    projectId: "gunkychat",
+    storageBucket: "gunkychat.firebasestorage.app",
+    messagingSenderId: "423489767287",
+    appId: "1:423489767287:web:ce847768781b0f589dc372"
+  };
+
+  firebase.initializeApp(fbConfig);
+
   function typeWriter(elementId, text, speed = 40, delay = 0) {
     const element = document.getElementById(elementId);
     if (!element) return;
@@ -106,6 +128,10 @@
   }
 
   window.onload = () => {
+    firebase.database().ref('online_users').on('value', (s) => {
+      document.getElementById('user-count').textContent = 'USERS_ONLINE: ' + (s.numChildren());
+    });
+
     fetch('data.json').then(r => r.json()).then(data => {
       typeWriter("type-subtitle", `MOOD: ${data.status.mood || 'STABLE'}`, 30, 1000);
       typeWriter("type-welcome", data.status.working_on || 'System ready.', 40, 2500);
@@ -114,12 +140,23 @@
 
     fetch('media.json').then(r => r.json()).then(data => {
       const grid = document.getElementById('recent-media');
-      const all = [...(data.comics || []), ...(data.drawings || [])].slice(0, 3);
+      grid.innerHTML = "";
+      const all = [...(data.comics || []), ...(data.drawings || [])]
+        .sort((a,b) => (b.uploadedAt || 0) - (a.uploadedAt || 0))
+        .slice(0, 3);
+
       all.forEach(item => {
-        grid.innerHTML += `<div class="recent-item" onclick="location.href='${item.url.endsWith('.pdf') ? 'comics.html' : 'drawings.html'}'">
-          <div class="recent-item-thumb">${item.url.endsWith('.pdf') ? '' : `<img src="${item.url}">`}</div>
-          <div><div style="font-size:12px; color:var(--dim)">ID: ${Math.random().toString(16).slice(2,8)}</div>
-          <div style="color:var(--accent)">${item.title.toUpperCase()}</div></div></div>`;
+        const thumb = item.thumbnail || 'https://via.placeholder.com/80x80/080505/cc0000?text=GUNKY';
+        const target = item.url.toLowerCase().endsWith('.pdf') ? 'comics.html' : 'drawings.html';
+        
+        grid.innerHTML += `
+          <div class="recent-item" onclick="location.href='${target}'">
+            <div class="recent-item-thumb"><img src="${thumb}"></div>
+            <div>
+              <div style="font-size:12px; color:var(--dim)">ID: ${Math.random().toString(16).slice(2,8).toUpperCase()}</div>
+              <div style="color:var(--accent)">${item.title.toUpperCase()}</div>
+            </div>
+          </div>`;
       });
     });
   };
