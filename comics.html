@@ -338,9 +338,9 @@
         comics.forEach(function(comic, idx) {
           html += '<div class="comic-card" onclick="openComic(\'' + comic.url.replace(/'/g, "\\'") + '\', \'' + comic.title.replace(/'/g, "\\'") + '\')">';
           if (comic.thumbnail) {
-            html += '<div class="comic-thumb"><img src="' + comic.thumbnail + '" alt="' + comic.title + '" style="width: 100%; height: 100%; object-fit: cover;"></div>';
+            html += '<div class="comic-thumb" style="width: 100%; height: 150px; overflow: hidden; display: flex; align-items: center; justify-content: center;"><img src="' + comic.thumbnail + '" alt="' + comic.title + '" style="width: 100%; height: 100%; object-fit: cover;"></div>';
           } else {
-            html += '<div id="thumb-' + idx + '" style="width: 100%; height: 150px; background: var(--bg3); display: flex; align-items: center; justify-content: center; color: var(--dim); font-size: 10px; overflow: hidden;"></div>';
+            html += '<div style="width: 100%; height: 150px; background: var(--bg3); display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 24px;">📖</div>';
           }
           html += '<h3>' + comic.title + '</h3>';
           html += '</div>';
@@ -353,13 +353,6 @@
         console.error('Error loading comics:', err);
         comicsList.innerHTML = '<div class="loading">Error loading comics: ' + err.message + '</div>';
       });
-  }
-
-  function generateThumbnail(pdfUrl, idx) {
-    var thumbContainer = document.getElementById('thumb-' + idx);
-    if (thumbContainer) {
-      thumbContainer.innerHTML = '<span style="font-size: 32px;">📖</span>';
-    }
   }
 
   function openComic(url, title) {
@@ -391,7 +384,7 @@
     if (!currentPdf) return;
 
     currentPdf.getPage(pageNum).then(function(page) {
-      var scale = zoomLevel / 100;
+      var scale = Math.min(zoomLevel / 100, 1.5); // Cap scale at 1.5x for performance
       var viewport = page.getViewport({ scale: scale });
 
       var pageDiv = document.createElement('div');
@@ -404,10 +397,14 @@
       canvas.width = viewport.width;
       canvas.height = viewport.height;
 
-      page.render({
+      // Lower quality for faster rendering
+      var renderContext = {
         canvasContext: context,
-        viewport: viewport
-      }).promise.then(function() {
+        viewport: viewport,
+        intent: 'display' // Use display intent for faster rendering
+      };
+
+      page.render(renderContext).promise.then(function() {
         pageDiv.appendChild(canvas);
         container.appendChild(pageDiv);
       });
