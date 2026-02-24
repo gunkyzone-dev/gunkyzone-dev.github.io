@@ -35,6 +35,30 @@
       font-size: 15px;
       line-height: 1.7;
       min-height: 100vh;
+      animation: crtBoot 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes crtBoot {
+      0% {
+        background: white;
+        opacity: 1;
+      }
+      10% {
+        background: white;
+        opacity: 1;
+      }
+      20% {
+        opacity: 0;
+        clip-path: inset(50% 0 50% 0);
+      }
+      60% {
+        opacity: 0.9;
+        clip-path: inset(0 0 0 0);
+      }
+      100% {
+        opacity: 1;
+        clip-path: inset(0 0 0 0);
+      }
     }
 
     .site-wrapper {
@@ -84,6 +108,23 @@
       from { background-position: 0 0; }
       to { background-position: 0 9px; }
     }
+
+    header { border-bottom: 1px solid var(--border); padding: 28px 0 18px; }
+    .site-title {
+      font-family: var(--font-disp); font-size: clamp(52px, 9vw, 90px);
+      line-height: 1; color: var(--accent); text-shadow: 0 0 40px var(--glow); letter-spacing: 2px;
+    }
+    .site-title span { color: var(--accent2); }
+
+    nav { display: flex; margin-top: 28px; border: 1px solid var(--border); width: fit-content; }
+    nav a {
+      display: block; padding: 7px 18px; color: var(--dim);
+      font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase;
+      border-right: 1px solid var(--border); transition: all 0.15s;
+    }
+    nav a:last-child { border-right: none; }
+    nav a:hover { background: var(--bg3); color: var(--accent); text-decoration: none; }
+    nav a.active { background: var(--bg3); color: var(--accent); }
 
     /* ─── CHAT ROOM ────────────────────────────── */
     .chat-room {
@@ -430,6 +471,16 @@
 </head>
 <body>
   <div class="site-wrapper">
+    <header>
+      <h1 class="site-title">GUNKY<span>ZONE</span></h1>
+      <nav>
+        <a href="index.html">home</a>
+        <a href="comics.html">comics</a>
+        <a href="drawings.html">drawings</a>
+        <a href="chat-github.html" class="active">chat</a>
+        <a href="about.html">about</a>
+      </nav>
+    </header>
     <div class="chat-room" id="chat-room">
       <div class="chat-header">
         <div class="chat-title">~ messages ~</div>
