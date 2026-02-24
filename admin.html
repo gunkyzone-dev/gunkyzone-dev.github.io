@@ -4,540 +4,150 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>GunkyZone — Admin Panel</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg:        #020202;
-      --bg2:       #050505;
-      --bg3:       #0a0a0a;
-      --border:    #1a1a1a;
-      --dim:       #3a3a3a;
-      --text:      #d4c0c0;
-      --accent:    #9b0000;
-      --accent2:   #cc0000;
-      --glow:      rgba(155, 0, 0, 0.22);
-      --font-mono: 'Share Tech Mono', monospace;
-      --font-disp: 'VT323', monospace;
-      --font-body: 'IM Fell English', serif;
+      --bg: #020202; --bg2: #0a0a0a; --border: #2a0000;
+      --text: #d4c0c0; --accent: #ff0000; --dim: #5a3a3a;
+      --font-mono: 'VT323', monospace;
     }
-
-    html { scroll-behavior: smooth; }
-    body {
-      background: var(--bg); color: var(--text);
-      font-family: var(--font-mono); font-size: 15px;
-      line-height: 1.7; min-height: 100vh; overflow-x: hidden;
+    body { background: var(--bg); color: var(--text); font-family: var(--font-mono); padding: 20px; font-size: 18px; }
+    .container { max-width: 800px; margin: 0 auto; border: 1px solid var(--border); padding: 20px; background: var(--bg2); }
+    h1 { color: var(--accent); margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+    
+    .form-group { margin-bottom: 15px; }
+    label { display: block; color: var(--dim); margin-bottom: 5px; }
+    input, select, textarea { 
+      width: 100%; background: #000; border: 1px solid var(--border); 
+      color: #fff; padding: 10px; font-family: var(--font-mono); font-size: 18px;
     }
-    body::before {
-      content: ''; position: fixed; inset: 0;
-      background: repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(0,0,0,0.18) 2px, rgba(0,0,0,0.18) 4px);
-      pointer-events: none; z-index: 1000;
+    button { 
+      background: var(--accent); color: #fff; border: none; padding: 10px 20px; 
+      cursor: pointer; font-family: var(--font-mono); font-size: 18px; width: 100%;
     }
-    body::after {
-      content: ''; position: fixed; inset: 0;
-      background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.6) 100%);
-      pointer-events: none; z-index: 999;
-    }
-
-    a { color: var(--accent); text-decoration: none; }
-    a:hover { text-decoration: underline; color: var(--accent2); }
-
-    .site-wrapper {
-      max-width: 960px; margin: 0 auto; padding: 40px 20px;
-    }
-
-    @keyframes crtBoot {
-      0% {
-        filter: brightness(1.05);
-        opacity: 1;
-        box-shadow: inset 0 0 100px 50px rgba(255, 255, 255, 0.08);
-      }
-      15% {
-        box-shadow: inset 0 0 80px 40px rgba(255, 255, 255, 0.06);
-      }
-      25% {
-        filter: brightness(1.03);
-        opacity: 1;
-        box-shadow: inset 0 0 40px 20px rgba(255, 255, 255, 0.04);
-      }
-      50% {
-        filter: brightness(1.01);
-        opacity: 0.98;
-        clip-path: inset(40% 0 40% 0);
-        box-shadow: none;
-      }
-      75% {
-        opacity: 0.99;
-        clip-path: inset(10% 0 10% 0);
-      }
-      100% {
-        filter: brightness(1);
-        opacity: 1;
-        clip-path: inset(0 0 0 0);
-        box-shadow: none;
-      }
-    }
-
-    body {
-      animation: crtBoot 1s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-
-    header { border-bottom: 1px solid var(--border); padding: 28px 0 18px; }
-    .site-title {
-      font-family: var(--font-disp); font-size: clamp(52px, 9vw, 90px);
-      line-height: 1; color: var(--accent); text-shadow: 0 0 40px var(--glow); letter-spacing: 2px;
-    }
-    .site-title span { color: var(--accent2); }
-    .site-subtitle { font-family: var(--font-body); font-style: italic; color: var(--dim); font-size: 14px; margin-top: 10px; }
-
-    main { padding: 40px 0 80px; }
-
-    .admin-section {
-      border: 1px solid var(--border);
-      padding: 24px;
-      background: var(--bg2);
-      margin-bottom: 24px;
-      border-radius: 6px;
-    }
-
-    .admin-section h2 {
-      font-size: 16px;
-      color: var(--accent);
-      margin-bottom: 16px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .admin-section h3 {
-      font-size: 14px;
-      color: var(--accent);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .form-group {
-      margin-bottom: 16px;
-    }
-
-    .form-group label {
-      display: block;
-      font-size: 12px;
-      color: var(--dim);
-      margin-bottom: 6px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .form-group input[type="text"],
-    .form-group textarea {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid var(--border);
-      background: var(--bg3);
-      color: var(--text);
-      font-family: var(--font-mono);
-      border-radius: 4px;
-      font-size: 14px;
-    }
-
-    .form-group textarea {
-      resize: vertical;
-      min-height: 100px;
-      font-family: var(--font-body);
-    }
-
-    .form-group input[type="text"]:focus,
-    .form-group textarea:focus {
-      outline: none;
-      border-color: var(--accent);
-    }
-
-    .button-group {
-      display: flex;
-      gap: 8px;
-      margin-top: 16px;
-    }
-
-    button {
-      padding: 10px 20px;
-      border: 1px solid var(--border);
-      background: var(--bg3);
-      color: var(--accent);
-      cursor: pointer;
-      font-family: var(--font-mono);
-      text-transform: uppercase;
-      font-size: 12px;
-      letter-spacing: 1px;
-      border-radius: 4px;
-      transition: all 0.2s;
-    }
-
-    button:hover {
-      background: var(--accent);
-      color: var(--bg);
-    }
-
-    button.secondary {
-      background: transparent;
-      color: var(--dim);
-    }
-
-    button.secondary:hover {
-      background: var(--bg3);
-      color: var(--accent);
-    }
-
-    .status-message {
-      padding: 12px;
-      border-radius: 4px;
-      margin-bottom: 16px;
-      font-size: 13px;
-      display: none;
-    }
-
-    .status-message.success {
-      background: rgba(138, 255, 193, 0.1);
-      color: #8affc1;
-      border: 1px solid #8affc1;
-      display: block;
-    }
-
-    .status-message.error {
-      background: rgba(204, 0, 0, 0.1);
-      color: #cc0000;
-      border: 1px solid #cc0000;
-      display: block;
-    }
-
-    .login-form {
-      max-width: 400px;
-      margin: 60px auto;
-    }
-
-    .login-form .admin-section {
-      margin-bottom: 0;
-    }
-
-    footer {
-      border-top: 1px solid var(--border); padding: 24px 0;
-      display: flex; justify-content: space-between; align-items: center;
-      font-size: 11px; color: var(--dim);
-    }
+    button:hover { background: #b30000; }
+    .entry-list { margin-top: 30px; border-top: 1px solid var(--border); padding-top: 20px; }
+    .entry-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #1a0000; }
+    .del-btn { background: #330000; width: auto; padding: 2px 10px; font-size: 14px; }
   </style>
 </head>
 <body>
-<div class="site-wrapper">
-  <header>
-    <h1 class="site-title">GUNKY<span>ZONE</span></h1>
-    <p class="site-subtitle">admin panel</p>
-  </header>
 
-  <main id="admin-content" style="display: none;">
-    <div class="admin-section">
-      <h2>Site Content</h2>
-      <div id="status-message" class="status-message"></div>
-
-      <div class="form-group">
-        <label>Subtitle (under title)</label>
-        <input type="text" id="subtitle" placeholder="comics · stories · dispatches from somewhere">
-      </div>
-
-      <div class="form-group">
-        <label>Welcome Box Text</label>
-        <textarea id="welcome-text" placeholder="Welcome text..."></textarea>
-      </div>
-
-      <div class="form-group">
-        <label>Chat Section Label</label>
-        <input type="text" id="chat-label" placeholder="Live Chat">
-      </div>
-
-      <div class="form-group">
-        <label>Footer Text</label>
-        <input type="text" id="footer-text" placeholder="© 2025 gunkyzone · made with hand-typed html">
-      </div>
-
-      <div class="button-group">
-        <button onclick="saveContent()">Save Changes</button>
-        <button class="secondary" onclick="loadContent()">Reload</button>
-        <button class="secondary" onclick="logout()">Sign Out</button>
-      </div>
-    </div>
-
-    <div class="admin-section">
-      <h2>Media Management</h2>
-      <div id="media-status" class="status-message"></div>
-
-      <div class="form-group">
-        <label>Category</label>
-        <select id="media-category" style="width: 100%; padding: 10px; border: 1px solid var(--border); background: var(--bg3); color: var(--text); font-family: var(--font-mono); border-radius: 4px;">
-          <option value="comics">Comics (PDF)</option>
-          <option value="drawings">Drawings (JPG, PNG)</option>
-          <option value="stories">Stories (PDF, TXT)</option>
-          <option value="gallery">Gallery (JPG, PNG, GIF)</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>Upload File</label>
-        <input type="file" id="media-file" style="width: 100%; padding: 10px; border: 1px solid var(--border); background: var(--bg3); color: var(--text); border-radius: 4px;">
-        <p style="font-size: 11px; color: var(--dim); margin-top: 6px;">Upload files to GitHub repo in /comics/ or /drawings/ folders, then add the path below</p>
-      </div>
-
-      <div class="form-group">
-        <label>File Path (e.g., /comics/chapter1.pdf or /drawings/sketch.png)</label>
-        <input type="text" id="media-path" placeholder="/comics/filename.pdf" style="width: 100%; padding: 10px; border: 1px solid var(--border); background: var(--bg3); color: var(--text); font-family: var(--font-mono); border-radius: 4px;">
-      </div>
-
-      <div class="form-group">
-        <label>File Title</label>
-        <input type="text" id="media-title" placeholder="e.g., Chapter 1, Summer Sketch">
-      </div>
-
-      <div class="button-group">
-        <button onclick="addMediaEntry()">Add to media.json</button>
-      </div>
-
-      <div style="margin-top: 24px; border-top: 1px solid var(--border); padding-top: 16px;">
-        <h3 style="font-size: 14px; color: var(--accent); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px;">Uploaded Files</h3>
-        <div id="media-list" style="max-height: 400px; overflow-y: auto;"></div>
-      </div>
-    </div>
-  </main>
-
-  <div id="login-content" class="login-form">
-    <div class="admin-section">
-      <h2>Admin Login</h2>
-      <div id="login-status" class="status-message"></div>
-      <div class="form-group">
-        <label>Password</label>
-        <input type="password" id="admin-password" placeholder="Enter admin password" onkeypress="if(event.key==='Enter') login()">
-      </div>
-      <div class="button-group">
-        <button onclick="login()">Sign In</button>
-      </div>
-    </div>
-  </div>
-
-  <footer>
-    <span>© 2025 gunkyzone · admin panel</span>
-  </footer>
+<div class="container" id="login-box">
+  <h1>ADMIN_AUTH</h1>
+  <input type="password" id="admin-pass" placeholder="ENTER_KEYCODE...">
+  <button onclick="checkAuth()" style="margin-top:10px">ACCESS</button>
 </div>
 
-<script>
-  // Allowed file types by category
-  var allowedTypes = {
-    comics: ['application/pdf'],
-    drawings: ['image/jpeg', 'image/png'],
-    stories: ['application/pdf', 'text/plain'],
-    gallery: ['image/jpeg', 'image/png', 'image/gif']
-  };
+<div class="container" id="admin-panel" style="display:none">
+  <h1>GUNKY_SYSTEM_CONTROL</h1>
+  
+  <div class="form-group">
+    <label>CATEGORY</label>
+    <select id="media-type">
+      <option value="comics">COMIC_BOOK</option>
+      <option value="drawings">ILLUSTRATION</option>
+    </select>
+  </div>
+  
+  <div class="form-group">
+    <label>ENTRY_TITLE</label>
+    <input type="text" id="m-title" placeholder="e.g. TEAR3">
+  </div>
+  
+  <div class="form-group">
+    <label>FILE_URL (PDF or Image)</label>
+    <input type="text" id="m-url" placeholder="/comics/file.pdf">
+  </div>
+  
+  <div class="form-group">
+    <label>THUMBNAIL_URL (Required for grid)</label>
+    <input type="text" id="m-thumb" placeholder="/thumbnails/thumb.png">
+  </div>
 
-  // Firebase config
-  window.FIREBASE_CONFIG = {
+  <button onclick="uploadMedia()">DEPLOY_TO_SITE</button>
+
+  <div class="entry-list" id="entry-list">
+    <h2 style="color:var(--dim)">ACTIVE_ENTRIES</h2>
+    <div id="list-contents"></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script>
+  const firebaseConfig = {
     apiKey: "AIzaSyD1L4Mmgnbl0W7lk1rnaRu5wv61TSFhJqM",
     authDomain: "gunkychat.firebaseapp.com",
     databaseURL: "https://gunkychat-default-rtdb.firebaseio.com",
     projectId: "gunkychat",
     storageBucket: "gunkychat.firebasestorage.app",
     messagingSenderId: "423489767287",
-    appId: "1:423489767287:web:ce847768781b0f589dc372",
-    measurementId: "G-W7VBG0GSV9"
+    appId: "1:423489767287:web:ce847768781b0f589dc372"
   };
 
-  var adminPassword = 'LoveyDovey6833*'; // Change this to your desired password
-  var isLoggedIn = false;
-  var contentRef = null;
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
-  function showStatus(message, type) {
-    var statusEl = document.getElementById('status-message');
-    statusEl.textContent = message;
-    statusEl.className = 'status-message ' + type;
-    setTimeout(function() {
-      statusEl.className = 'status-message';
-    }, 3000);
-  }
-
-  function login() {
-    var password = document.getElementById('admin-password').value;
-    if (password === adminPassword) {
-      isLoggedIn = true;
-      localStorage.setItem('gunky_admin_logged_in', '1');
-      document.getElementById('login-content').style.display = 'none';
-      document.getElementById('admin-content').style.display = 'block';
-      loadContent();
+  function checkAuth() {
+    // Basic local check for you
+    if(document.getElementById('admin-pass').value === 'gunky2026') {
+      document.getElementById('login-box').style.display = 'none';
+      document.getElementById('admin-panel').style.display = 'block';
+      loadEntries();
     } else {
-      var loginStatus = document.getElementById('login-status');
-      loginStatus.textContent = 'Incorrect password';
-      loginStatus.className = 'status-message error';
+      alert("UNAUTHORIZED");
     }
   }
 
-  function logout() {
-    isLoggedIn = false;
-    localStorage.removeItem('gunky_admin_logged_in');
-    document.getElementById('admin-content').style.display = 'none';
-    document.getElementById('login-content').style.display = 'block';
-    document.getElementById('admin-password').value = '';
-  }
+  function uploadMedia() {
+    const type = document.getElementById('media-type').value;
+    const title = document.getElementById('m-title').value;
+    const url = document.getElementById('m-url').value;
+    const thumb = document.getElementById('m-thumb').value;
 
-  function loadContent() {
-    if (!contentRef) return;
-    contentRef.once('value', function(snap) {
-      var data = snap.val() || {};
-      document.getElementById('subtitle').value = data.subtitle || '';
-      document.getElementById('welcome-text').value = data.welcomeText || '';
-      document.getElementById('chat-label').value = data.chatLabel || '';
-      document.getElementById('footer-text').value = data.footerText || '';
-    });
-  }
+    if(!title || !url || !thumb) return alert("MISSING_DATA");
 
-  function saveContent() {
-    if (!contentRef) return;
-    var content = {
-      subtitle: document.getElementById('subtitle').value,
-      welcomeText: document.getElementById('welcome-text').value,
-      chatLabel: document.getElementById('chat-label').value,
-      footerText: document.getElementById('footer-text').value
-    };
-    contentRef.set(content, function(err) {
-      if (err) {
-        showStatus('Error saving: ' + err.message, 'error');
-      } else {
-        showStatus('Changes saved successfully!', 'success');
-      }
-    });
-  }
-
-  function addMediaEntry() {
-    var category = document.getElementById('media-category').value;
-    var title = document.getElementById('media-title').value || 'Untitled';
-    var filePath = document.getElementById('media-path').value.trim();
-
-    if (!filePath) {
-      showMediaStatus('Please enter a file path', 'error');
-      return;
-    }
-
-    if (!filePath.startsWith('/')) {
-      filePath = '/' + filePath;
-    }
-
-    showMediaStatus('Entry added! Remember to push to GitHub.', 'success');
-
-    // Create entry object
-    var newItem = {
+    const newRef = db.ref('media_metadata/' + type).push();
+    newRef.set({
       title: title,
-      filename: filePath.split('/').pop(),
-      url: filePath,
+      url: url,
+      thumbnail: thumb,
       uploadedAt: Date.now()
-    };
-
-    // Log for user to copy
-    console.log('Add this to media.json:', JSON.stringify(newItem, null, 2));
-    
-    document.getElementById('media-path').value = '';
-    document.getElementById('media-title').value = '';
-    loadMediaList();
+    }).then(() => {
+      alert("UPLOAD_SUCCESSFUL");
+      location.reload();
+    });
   }
 
-  function loadMediaList() {
-    var category = document.getElementById('media-category').value;
-    var mediaList = document.getElementById('media-list');
-    mediaList.innerHTML = '<p style="color: var(--dim);">Loading...</p>';
-
-    fetch('/media.json')
-      .then(function(res) { return res.json(); })
-      .then(function(data) {
-        var files = data[category] || [];
-
-        if (files.length === 0) {
-          mediaList.innerHTML = '<p style="color: var(--dim);">No files in this category yet</p>';
-          return;
-        }
-
-        mediaList.innerHTML = '';
-        files.forEach(function(file, idx) {
-          var item = document.createElement('div');
-          item.style.cssText = 'padding: 12px; border: 1px solid var(--border); border-radius: 4px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;';
-          
-          var info = document.createElement('div');
-          info.innerHTML = '<div style="font-size: 13px; color: var(--text);">' + file.title + '</div><div style="font-size: 11px; color: var(--dim);">' + file.url + '</div>';
-          
-          var copyBtn = document.createElement('button');
-          copyBtn.textContent = 'Copy';
-          copyBtn.className = 'secondary';
-          copyBtn.style.padding = '6px 12px';
-          copyBtn.onclick = function() {
-            var entry = JSON.stringify(file);
-            navigator.clipboard.writeText(entry);
-            showMediaStatus('Entry copied to clipboard!', 'success');
-          };
-
-          item.appendChild(info);
-          item.appendChild(copyBtn);
-          mediaList.appendChild(item);
-        });
-      })
-      .catch(function(err) {
-        mediaList.innerHTML = '<p style="color: var(--dim);">Error loading files: ' + err.message + '</p>';
-      });
-  }
-
-  function showMediaStatus(message, type) {
-    var statusEl = document.getElementById('media-status');
-    statusEl.textContent = message;
-    statusEl.className = 'status-message ' + type;
-    setTimeout(function() {
-      statusEl.className = 'status-message';
-    }, 3000);
-  }
-
-  // Initialize Firebase
-  function initFirebase() {
-    function loadScript(src, cb) {
-      var s = document.createElement('script');
-      s.src = src;
-      s.onload = cb;
-      s.onerror = function() {
-        console.error('Failed to load script:', src);
-      };
-      s.async = true;
-      document.head.appendChild(s);
-    }
-
-    loadScript('https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js', function() {
-      loadScript('https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js', function() {
-        try {
-          firebase.initializeApp(window.FIREBASE_CONFIG);
-          contentRef = firebase.database().ref('/site_content');
-          mediaRef = firebase.database().ref('/media_metadata');
-          
-          // Check if already logged in
-          if (localStorage.getItem('gunky_admin_logged_in') === '1') {
-            isLoggedIn = true;
-            document.getElementById('login-content').style.display = 'none';
-            document.getElementById('admin-content').style.display = 'block';
-            loadContent();
-            loadMediaList();
-          }
-        } catch(err) {
-          console.error('Firebase init error:', err);
+  function loadEntries() {
+    const list = document.getElementById('list-contents');
+    db.ref('media_metadata').on('value', (snap) => {
+      list.innerHTML = "";
+      const data = snap.val();
+      if(!data) return;
+      
+      ['comics', 'drawings'].forEach(cat => {
+        if(data[cat]) {
+          Object.keys(data[cat]).forEach(key => {
+            const item = data[cat][key];
+            list.innerHTML += `
+              <div class="entry-item">
+                <span>[${cat.toUpperCase()}] ${item.title}</span>
+                <button class="del-btn" onclick="deleteEntry('${cat}', '${key}')">DELETE</button>
+              </div>`;
+          });
         }
       });
     });
   }
 
-  initFirebase();
+  window.deleteEntry = (cat, key) => {
+    if(confirm("REDACT ENTRY?")) {
+      db.ref(`media_metadata/${cat}/${key}`).remove();
+    }
+  }
 </script>
 </body>
 </html>
-
-  // Load media list when category changes
-  document.addEventListener('DOMContentLoaded', function() {
-    var categorySelect = document.getElementById('media-category');
-    if (categorySelect) {
-      categorySelect.addEventListener('change', loadMediaList);
-    }
-  });
