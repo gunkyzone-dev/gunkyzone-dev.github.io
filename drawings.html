@@ -172,6 +172,17 @@
       max-width: 100%;
       max-height: 100%;
       border-radius: 6px;
+      cursor: zoom-in;
+      transition: transform 0.3s ease;
+    }
+
+    .lightbox-image.zoomed {
+      cursor: zoom-out;
+      max-width: none;
+      max-height: none;
+      width: auto;
+      height: auto;
+      transform: scale(1.5);
     }
 
     .lightbox-close {
@@ -188,31 +199,6 @@
 
     .lightbox-close:hover {
       color: var(--accent2);
-    }
-
-    .lightbox-nav {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      color: var(--accent);
-      font-size: 32px;
-      cursor: pointer;
-      padding: 20px;
-      transition: color 0.2s;
-    }
-
-    .lightbox-nav:hover {
-      color: var(--accent2);
-    }
-
-    .lightbox-prev {
-      left: -60px;
-    }
-
-    .lightbox-next {
-      right: -60px;
     }
 
     .loading {
@@ -250,9 +236,7 @@
   <div id="lightbox" class="lightbox">
     <div class="lightbox-content">
       <button class="lightbox-close" onclick="closeLightbox()">×</button>
-      <button class="lightbox-nav lightbox-prev" onclick="prevImage()">‹</button>
-      <img id="lightbox-image" class="lightbox-image" src="">
-      <button class="lightbox-nav lightbox-next" onclick="nextImage()">›</button>
+      <img id="lightbox-image" class="lightbox-image" src="" onclick="toggleZoom(event)">
     </div>
   </div>
 
@@ -321,23 +305,17 @@
     var lightbox = document.getElementById('lightbox');
     var img = document.getElementById('lightbox-image');
     img.src = currentImages[index].url;
+    img.classList.remove('zoomed');
     lightbox.classList.add('active');
   }
 
   function closeLightbox() {
     document.getElementById('lightbox').classList.remove('active');
+    document.getElementById('lightbox-image').classList.remove('zoomed');
   }
 
-  function nextImage() {
-    if (currentImageIndex < currentImages.length - 1) {
-      openLightbox(currentImageIndex + 1);
-    }
-  }
-
-  function prevImage() {
-    if (currentImageIndex > 0) {
-      openLightbox(currentImageIndex - 1);
-    }
+  function toggleZoom(event) {
+    event.target.classList.toggle('zoomed');
   }
 
   // Initialize Firebase
