@@ -100,7 +100,22 @@
       animation: blink 1.1s step-end infinite;
     }
     @keyframes blink { 50% { opacity: 0; } }
-    .site-subtitle { font-family: var(--font-body); font-style: italic; color: var(--dim); font-size: 14px; margin-top: 10px; }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes glitch {
+      0%, 100% { transform: translate(0); }
+      20% { transform: translate(-2px, 2px); }
+      40% { transform: translate(-2px, -2px); }
+      60% { transform: translate(2px, 2px); }
+      80% { transform: translate(2px, -2px); }
+    }
+    .site-subtitle { font-family: var(--font-body); font-style: italic; color: var(--dim); font-size: 14px; margin-top: 10px; animation: slideIn 0.8s ease-out 0.3s both; }
 
     nav { display: flex; margin-top: 28px; border: 1px solid var(--border); width: fit-content; }
     nav a {
@@ -122,6 +137,7 @@
       position: relative;
       box-shadow: 0 8px 30px rgba(0,0,0,0.45);
       border-radius: 6px;
+      animation: fadeInUp 0.8s ease-out 0.5s both;
     }
     .welcome-box::before {
       content: '//';
@@ -148,6 +164,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
+      animation: slideIn 0.6s ease-out forwards;
     }
     .section-label::after {
       content: '';
@@ -155,10 +172,14 @@
       height: 1px;
       background: var(--border);
     }
+    .section-label:nth-of-type(2) { animation-delay: 0.6s; }
+    .section-label:nth-of-type(3) { animation-delay: 0.8s; }
+    .section-label:nth-of-type(4) { animation-delay: 1s; }
 
     .chat-wrap {
       max-width: 680px;
       overflow: hidden;
+      animation: fadeInUp 0.8s ease-out 1.2s both;
     }
 
     .chat-wrap iframe {
@@ -172,6 +193,60 @@
 
     .chat-wrap iframe::-webkit-scrollbar {
       display: none;
+    }
+
+    .featured-item {
+      border: 2px solid var(--accent);
+      padding: 20px;
+      background: linear-gradient(135deg, rgba(155, 0, 0, 0.1), transparent);
+      border-radius: 8px;
+      margin-bottom: 20px;
+      animation: fadeInUp 0.8s ease-out 0.7s both;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .featured-item::before {
+      content: '★';
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 24px;
+      color: var(--accent);
+      opacity: 0.3;
+    }
+
+    .featured-item h3 {
+      color: var(--accent);
+      font-family: var(--font-disp);
+      font-size: 18px;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+
+    .featured-item p {
+      color: var(--text);
+      font-size: 13px;
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
+
+    .featured-item a {
+      display: inline-block;
+      padding: 8px 16px;
+      border: 1px solid var(--accent);
+      background: transparent;
+      color: var(--accent);
+      border-radius: 4px;
+      font-size: 12px;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .featured-item a:hover {
+      background: var(--accent);
+      color: var(--bg);
     }
 
     footer {
@@ -192,48 +267,49 @@
 
     .recent-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
       gap: 16px;
       margin-top: 16px;
+      animation: fadeInUp 0.8s ease-out forwards;
     }
 
     .recent-item {
       border: 1px solid var(--border);
-      padding: 12px;
       background: var(--bg2);
       border-radius: 6px;
-      text-align: center;
-      transition: all 0.2s;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+      aspect-ratio: 1;
+    }
+
+    .recent-item-thumb {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .recent-item-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.4s ease;
+      filter: brightness(0.9);
+    }
+
+    .recent-item:hover .recent-item-thumb img {
+      transform: scale(1.1);
+      filter: brightness(1.1);
     }
 
     .recent-item:hover {
-      background: var(--bg3);
       border-color: var(--accent);
-    }
-
-    .recent-item p {
-      font-size: 12px;
-      color: var(--accent);
-      margin-bottom: 8px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .recent-item a {
-      display: inline-block;
-      padding: 8px 16px;
-      border: 1px solid var(--border);
-      background: var(--bg3);
-      color: var(--accent);
-      border-radius: 4px;
-      font-size: 12px;
-      transition: all 0.2s;
-    }
-
-    .recent-item a:hover {
-      background: var(--accent);
-      color: var(--bg);
-      text-decoration: none;
+      box-shadow: 0 0 15px rgba(155, 0, 0, 0.2);
     }
   </style>
 </head>
@@ -257,6 +333,9 @@
     <div class="welcome-box">
       <p></p>
     </div>
+
+    <div class="section-label">Featured</div>
+    <div id="featured-section"></div>
 
     <div class="section-label">Recent Comics</div>
     <div id="recent-comics"></div>
@@ -378,11 +457,22 @@
         comics.sort(function(a, b) { return b.uploadedAt - a.uploadedAt; });
         drawings.sort(function(a, b) { return b.uploadedAt - a.uploadedAt; });
 
+        // Featured section - show latest item
+        var featuredEl = document.getElementById('featured-section');
+        if (comics.length > 0 || drawings.length > 0) {
+          var latest = comics.length > 0 ? comics[0] : drawings[0];
+          var type = comics.length > 0 ? 'comic' : 'drawing';
+          var featuredHtml = '<div class="featured-item"><h3>' + latest.title + '</h3><p>Latest ' + type + ' · ' + new Date(latest.uploadedAt).toLocaleDateString() + '</p><a href="' + (type === 'comic' ? 'comics.html' : 'drawings.html') + '">View</a></div>';
+          if (featuredEl) featuredEl.innerHTML = featuredHtml;
+        }
+
         // Show recent comics
         if (comics.length > 0) {
           var comicsHtml = '<div class="recent-grid>';
           for (var i = 0; i < Math.min(3, comics.length); i++) {
-            comicsHtml += '<div class="recent-item"><p>' + comics[i].title + '</p><button onclick="openComicViewer(\'' + comics[i].url.replace(/'/g, "\\'") + '\')" style="padding: 8px 16px; border: 1px solid var(--border); background: var(--bg3); color: var(--accent); cursor: pointer; font-family: var(--font-mono); font-size: 12px; border-radius: 4px;">View</button></div>';
+            comicsHtml += '<div class="recent-item" onclick="openComicViewer(\'' + comics[i].url.replace(/'/g, "\\'") + '\')" title="' + comics[i].title + '">';
+            comicsHtml += '<div class="recent-item-thumb"><img src="' + comics[i].url + '?w=300" alt="' + comics[i].title + '" loading="lazy" decoding="async"></div>';
+            comicsHtml += '</div>';
           }
           comicsHtml += '</div>';
           var comicsEl = document.getElementById('recent-comics');
@@ -393,7 +483,9 @@
         if (drawings.length > 0) {
           var drawingsHtml = '<div class="recent-grid>';
           for (var i = 0; i < Math.min(3, drawings.length); i++) {
-            drawingsHtml += '<div class="recent-item"><p>' + drawings[i].title + '</p><a href="drawings.html" style="display: inline-block; padding: 8px 16px; border: 1px solid var(--border); background: var(--bg3); color: var(--accent); border-radius: 4px; font-size: 12px;">View</a></div>';
+            drawingsHtml += '<div class="recent-item" onclick="location.href=\'drawings.html\'" title="' + drawings[i].title + '">';
+            drawingsHtml += '<div class="recent-item-thumb"><img src="' + drawings[i].url + '?w=300" alt="' + drawings[i].title + '" loading="lazy" decoding="async"></div>';
+            drawingsHtml += '</div>';
           }
           drawingsHtml += '</div>';
           var drawingsEl = document.getElementById('recent-drawings');
