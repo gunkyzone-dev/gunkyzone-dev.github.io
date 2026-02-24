@@ -120,11 +120,12 @@
       background: var(--bg2);
       display: flex;
       flex-direction: column;
+      will-change: transform;
     }
 
     .gallery-item:hover {
       border-color: var(--accent);
-      transform: scale(1.02);
+      transform: translateZ(0) scale(1.02);
       box-shadow: 0 0 20px rgba(155, 0, 0, 0.3);
     }
 
@@ -236,8 +237,8 @@
     <div id="gallery-list"></div>
   </main>
 
-  <div id="lightbox" class="lightbox">
-    <div class="lightbox-content">
+  <div id="lightbox" class="lightbox" onclick="closeLightboxOnBg(event)">
+    <div class="lightbox-content" onclick="event.stopPropagation()">
       <button class="lightbox-close" onclick="closeLightbox()">×</button>
       <img id="lightbox-image" class="lightbox-image" src="" onclick="toggleZoom(event)">
     </div>
@@ -316,6 +317,12 @@
   function closeLightbox() {
     document.getElementById('lightbox').classList.remove('active');
     document.getElementById('lightbox-image').classList.remove('zoomed');
+  }
+
+  function closeLightboxOnBg(event) {
+    if (event.target.id === 'lightbox') {
+      closeLightbox();
+    }
   }
 
   function toggleZoom(event) {
