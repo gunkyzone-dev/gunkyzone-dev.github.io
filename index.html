@@ -266,8 +266,8 @@
     }
 
     .recent-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      display: flex;
+      flex-direction: row;
       gap: 16px;
       margin-top: 16px;
       animation: fadeInUp 0.8s ease-out forwards;
@@ -283,6 +283,7 @@
       position: relative;
       aspect-ratio: 1;
       max-width: 120px;
+      flex-shrink: 0;
     }
 
     .recent-item-thumb {
@@ -472,7 +473,7 @@
           var comicsHtml = '<div class="recent-grid>';
           for (var i = 0; i < Math.min(3, comics.length); i++) {
             comicsHtml += '<div class="recent-item" onclick="openComicViewer(\'' + comics[i].url.replace(/'/g, "\\'") + '\')" title="' + comics[i].title + '">';
-            comicsHtml += '<div class="recent-item-thumb"><img src="' + comics[i].url + '?w=300" alt="' + comics[i].title + '" loading="lazy" decoding="async"></div>';
+            comicsHtml += '<div class="recent-item-thumb" style="background: linear-gradient(135deg, var(--bg3), var(--bg2)); display: flex; align-items: center; justify-content: center;"><span style="font-size: 48px;">📖</span></div>';
             comicsHtml += '</div>';
           }
           comicsHtml += '</div>';
