@@ -107,6 +107,7 @@
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
       gap: 16px;
+      margin-top: 16px;
       margin-bottom: 40px;
     }
 
@@ -117,11 +118,14 @@
       cursor: pointer;
       transition: all 0.2s;
       background: var(--bg2);
+      display: flex;
+      flex-direction: column;
     }
 
     .gallery-item:hover {
       border-color: var(--accent);
       transform: scale(1.02);
+      box-shadow: 0 0 20px rgba(155, 0, 0, 0.3);
     }
 
     .gallery-item img {
@@ -138,6 +142,9 @@
       text-transform: uppercase;
       letter-spacing: 1px;
       background: var(--bg3);
+      flex-grow: 1;
+      display: flex;
+      align-items: center;
     }
 
     .lightbox {
@@ -236,6 +243,7 @@
   </header>
 
   <main>
+    <div class="section-label">Gallery</div>
     <div id="gallery-list"></div>
   </main>
 
