@@ -8,11 +8,11 @@
   <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg:        #060606;
-      --bg2:       #0d0d0d;
-      --bg3:       #131313;
-      --border:    #2a1a1a;
-      --dim:       #5a3a3a;
+      --bg:        #020202;
+      --bg2:       #050505;
+      --bg3:       #0a0a0a;
+      --border:    #1a1a1a;
+      --dim:       #3a3a3a;
       --text:      #d4c0c0;
       --accent:    #9b0000;
       --accent2:   #cc0000;
@@ -35,8 +35,9 @@
     }
     body::after {
       content: ''; position: fixed; inset: 0;
-      background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.6) 100%);
+      background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.8) 100%);
       pointer-events: none; z-index: 999;
+      box-shadow: inset 0 0 200px 100px rgba(255, 255, 255, 0.02);
     }
 
     a { color: var(--accent); text-decoration: none; }
