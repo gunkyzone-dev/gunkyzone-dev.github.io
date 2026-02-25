@@ -237,13 +237,34 @@
             }
           }
         });
-      }, { root: document.getElementById('viewer-container'), rootMargin: '800px 0px', threshold: [0.1] });
+      }, { root: document.getElementById('viewer-container'), rootMargin: '3000px 0px', threshold: [0.1] });
 
       for (var pageNum = 1; pageNum <= totalPages; pageNum++) {
         createPagePlaceholder(pageNum, pagesDiv);
       }
 
       content.appendChild(pagesDiv);
+
+      // Background rendering of all pages sequentially
+      var currentPageToRender = 1;
+      function renderNextPageInBackground() {
+        if (currentPageToRender > totalPages) return;
+        var pageDiv = document.querySelector('.pdf-page[data-page-num="' + currentPageToRender + '"]');
+        if (pageDiv && !pageDiv.dataset.rendered) {
+          renderPageContent(pageDiv).then(() => {
+            currentPageToRender++;
+            setTimeout(renderNextPageInBackground, 100);
+          }).catch(() => {
+            currentPageToRender++;
+            setTimeout(renderNextPageInBackground, 100);
+          });
+        } else {
+          currentPageToRender++;
+          setTimeout(renderNextPageInBackground, 50);
+        }
+      }
+      // Start background rendering after a short delay
+      setTimeout(renderNextPageInBackground, 1000);
     }
 
     function createPagePlaceholder(pageNum, container) {
@@ -267,7 +288,7 @@
       var pageNum = parseInt(pageDiv.dataset.pageNum);
       pageDiv.dataset.rendered = 'true';
 
-      currentPdf.getPage(pageNum).then(function(page) {
+      return currentPdf.getPage(pageNum).then(function(page) {
         // Render at a higher scale for better quality when zoomed in
         var renderScale = 1.5; 
         var viewport = page.getViewport({ scale: renderScale });
@@ -282,7 +303,7 @@
         pageDiv.style.display = 'block';
         pageDiv.innerHTML = ''; // Clear loading text
 
-        page.render({
+        return page.render({
           canvasContext: context,
           viewport: viewport
         }).promise.then(function() {

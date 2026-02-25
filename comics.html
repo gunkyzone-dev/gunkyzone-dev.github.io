@@ -75,6 +75,7 @@
         if (data) {
           const comics = Object.values(data).sort((a, b) => b.uploadedAt - a.uploadedAt);
           renderComics(comics);
+          preloadPDFs(comics);
         } else {
           fetchLocalComics();
         }
@@ -87,7 +88,31 @@
   function fetchLocalComics() {
     fetch('media.json').then(r => r.json()).then(data => {
       renderComics(data.comics || []);
+      preloadPDFs(data.comics || []);
     });
+  }
+
+  function preloadPDFs(comics) {
+    const pdfs = comics.filter(c => c.url && c.url.toLowerCase().endsWith('.pdf')).map(c => c.url);
+    if (pdfs.length === 0) return;
+
+    let i = 0;
+    function loadNext() {
+      if (i >= pdfs.length) return;
+      fetch(pdfs[i], { cache: 'force-cache' })
+        .then(res => res.blob())
+        .then(() => {
+          i++;
+          setTimeout(loadNext, 500);
+        })
+        .catch(e => {
+          console.log('Prefetch failed for', pdfs[i]);
+          i++;
+          setTimeout(loadNext, 500);
+        });
+    }
+    // Start preloading after a short delay
+    setTimeout(loadNext, 1000);
   }
 
   function renderComics(comics) {

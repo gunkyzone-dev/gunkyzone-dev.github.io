@@ -422,19 +422,46 @@
             const drawings = fbData.drawings ? Object.values(fbData.drawings) : [];
             renderRecent([...comics, ...drawings]);
             renderComics(comics);
+            preloadPDFs(comics);
           } else {
             renderRecent([...(localData.comics || []), ...(localData.drawings || [])]);
             renderComics(localData.comics || []);
+            preloadPDFs(localData.comics || []);
           }
         }).catch(() => {
           renderRecent([...(localData.comics || []), ...(localData.drawings || [])]);
           renderComics(localData.comics || []);
+          preloadPDFs(localData.comics || []);
         });
       } else {
         renderRecent([...(localData.comics || []), ...(localData.drawings || [])]);
         renderComics(localData.comics || []);
+        preloadPDFs(localData.comics || []);
       }
     });
+
+    function preloadPDFs(comics) {
+      const pdfs = comics.filter(c => c.url && c.url.toLowerCase().endsWith('.pdf')).map(c => c.url);
+      if (pdfs.length === 0) return;
+
+      let i = 0;
+      function loadNext() {
+        if (i >= pdfs.length) return;
+        fetch(pdfs[i], { cache: 'force-cache' })
+          .then(res => res.blob())
+          .then(() => {
+            i++;
+            setTimeout(loadNext, 500);
+          })
+          .catch(e => {
+            console.log('Prefetch failed for', pdfs[i]);
+            i++;
+            setTimeout(loadNext, 500);
+          });
+      }
+      // Start preloading after a short delay so the main page loads smoothly
+      setTimeout(loadNext, 2000);
+    }
 
     function renderRecent(allMedia) {
       const grid = document.getElementById('recent-entries');
