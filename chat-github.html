@@ -229,9 +229,28 @@
 
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database().ref('gunky_chat');
+  const presenceRef = firebase.database().ref('presence');
   const msgContainer = document.getElementById('messages-container');
   const chatInput = document.getElementById('chat-input');
   const nameInput = document.getElementById('name-input');
+
+  // --- PRESENCE SYSTEM ---
+  const amOnline = firebase.database().ref('.info/connected');
+  const userRef = presenceRef.push();
+
+  amOnline.on('value', (snapshot) => {
+    if (snapshot.val()) {
+      userRef.onDisconnect().remove();
+      userRef.set(true);
+    }
+  });
+
+  presenceRef.on('value', (snapshot) => {
+    if (currentChannel === 'global') {
+      const count = snapshot.numChildren();
+      document.getElementById('chat-status').innerHTML = `SYS_STATUS: ONLINE | USERS: ${count}`;
+    }
+  });
 
   // Check if we are in an iframe via query param
   const urlParams = new URLSearchParams(window.location.search);
@@ -412,7 +431,12 @@
     npcContainer.style.display = 'none';
     msgContainer.style.display = 'flex';
     document.getElementById('chat-title').textContent = 'GLOBAL_COMMS';
-    document.getElementById('chat-status').innerHTML = 'SYS_STATUS: ONLINE';
+    
+    // Update presence count immediately when switching back
+    presenceRef.once('value').then((snapshot) => {
+      const count = snapshot.numChildren();
+      document.getElementById('chat-status').innerHTML = `SYS_STATUS: ONLINE | USERS: ${count}`;
+    });
     
     // Remove visual shift
     document.body.style.boxShadow = "none";
