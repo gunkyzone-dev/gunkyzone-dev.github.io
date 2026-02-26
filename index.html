@@ -70,7 +70,8 @@ ca      100% { transform: none; filter: none; opacity: 1; }
     .compact-info { display: flex; justify-content: space-between; width: 100%; align-items: center; }
 
     /* NEW badge */
-    .new-badge { display: inline-block; background: var(--accent); color: #fff; font-size: 11px; padding: 0 5px; margin-left: 6px; vertical-align: middle; animation: blink 1s step-end infinite; }
+    .new-badge { display: inline-block; background: var(--accent); color: #fff; font-size: 11px; padding: 0 5px; margin-left: 6px; vertical-align: middle; }
+    .new-badge-flash { animation: blink 1s step-end infinite; }
     /* Visit counter */
     #visit-count { font-size: 14px; color: var(--dim); letter-spacing: 1px; }
     /* Transmission of the day */
@@ -527,13 +528,14 @@ ca      100% { transform: none; filter: none; opacity: 1; }
         const thumb = item.thumbnail || item.thumb || 'https://via.placeholder.com/80x80/080505/cc0000?text=GUNKY';
         const target = `drawings.html?url=${encodeURIComponent(item.url)}&from=index`;
         const safeTarget = target.replace(/'/g, "%27").replace(/"/g, "%22");
-        const isNew = item.uploadedAt && (Date.now() - item.uploadedAt) < 604800000;
+        const age = item.uploadedAt ? Date.now() - item.uploadedAt : Infinity;
+        const badgeClass = age < 86400000 ? 'new-badge new-badge-flash' : '';
         
         container.innerHTML += `
           <div class="drawing-item" onclick="location.href='${safeTarget}'">
             <div class="drawing-thumb"><img src="${thumb}"></div>
             <div>
-              <div style="font-size:12px; color:var(--dim)">ID: ${Math.random().toString(16).slice(2,8).toUpperCase()}${isNew ? ' <span class="new-badge">NEW</span>' : ''}</div>
+              <div style="font-size:12px; color:var(--dim)">ID: ${Math.random().toString(16).slice(2,8).toUpperCase()}${badgeClass ? ` <span class="${badgeClass}">NEW</span>` : ''}</div>
               <div style="color:var(--accent)">${item.title.toUpperCase()}</div>
             </div>
           </div>`;
@@ -558,14 +560,15 @@ ca      100% { transform: none; filter: none; opacity: 1; }
       sorted.forEach(item => {
         const thumb = item.thumbnail || item.thumb || 'https://via.placeholder.com/80x80/080505/cc0000?text=GUNKY';
         const target = `comics.html?url=${encodeURIComponent(item.url)}&from=index`;
-        const isNew = item.uploadedAt && (Date.now() - item.uploadedAt) < 604800000;
+        const age = item.uploadedAt ? Date.now() - item.uploadedAt : Infinity;
+        const badgeClass = age < 86400000 ? 'new-badge new-badge-flash' : '';
         
         list.innerHTML += `
           <div class="compact-item" onclick="location.href='${target}'">
             <div class="compact-thumb"><img src="${thumb}"></div>
             <div class="compact-info">
               <div>
-                <div style="font-size:12px; color:var(--dim)">ID: ${Math.random().toString(16).slice(2,8).toUpperCase()}${isNew ? ' <span class="new-badge">NEW</span>' : ''}</div>
+                <div style="font-size:12px; color:var(--dim)">ID: ${Math.random().toString(16).slice(2,8).toUpperCase()}${badgeClass ? ` <span class="${badgeClass}">NEW</span>` : ''}</div>
                 <div style="color:var(--accent)">${item.title.toUpperCase()}</div>
               </div>
             </div>

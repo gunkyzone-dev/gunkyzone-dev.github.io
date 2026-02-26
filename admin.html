@@ -42,6 +42,8 @@
     .entry-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #1a0000; gap: 10px; }
     .del-btn { background: #330000; width: auto; padding: 2px 10px; font-size: 14px; }
     .edit-btn { background: #002a00; border: 1px solid #005500; color: #00cc00; width: auto; padding: 2px 10px; font-size: 14px; }
+    .confirm-badge { display: none; color: #00ff00; border: 1px solid #00ff00; background: #001a00; padding: 6px 14px; font-size: 15px; text-align: center; margin-top: 8px; animation: fadeOut 0.5s ease 2.5s forwards; }
+    @keyframes fadeOut { to { opacity: 0; } }
     .edit-btn:hover { background: #004400; }
     .entry-btns { display: flex; gap: 6px; flex-shrink: 0; }
     .edit-form { background: #050505; border: 1px solid var(--border); padding: 12px; margin: 0 0 4px 0; }
@@ -83,6 +85,7 @@
       <input type="text" id="t-transmission" placeholder="e.g. THE SIGNAL IS CLEAR TODAY. PROCEED.">
     </div>
     <button onclick="updateSiteText()">UPDATE_TEXT</button>
+    <div id="text-confirm" class="confirm-badge">// TEXT_UPDATED_SUCCESSFULLY</div>
   </div>
 
   <h2 style="color:var(--dim); border-bottom: 1px solid var(--border); padding-bottom: 10px;">MEDIA_UPLOAD</h2>
@@ -167,7 +170,12 @@
       footer: footer,
       transmission: transmission
     }).then(() => {
-      alert("TEXT_UPDATED_SUCCESSFULLY");
+      const badge = document.getElementById('text-confirm');
+      badge.style.display = 'block';
+      badge.style.animation = 'none';
+      void badge.offsetWidth; // reflow to restart animation
+      badge.style.animation = 'fadeOut 0.5s ease 2.5s forwards';
+      setTimeout(() => { badge.style.display = 'none'; }, 3100);
     });
   }
 
