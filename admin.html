@@ -78,6 +78,10 @@
       <label>FOOTER_TEXT</label>
       <input type="text" id="t-footer" placeholder="e.g. © 2025 GUNKY_SYSTEMS. DATA_PORT: SECURE.">
     </div>
+    <div class="form-group">
+      <label>TRANSMISSION_OF_THE_DAY (leave blank to use auto-rotation)</label>
+      <input type="text" id="t-transmission" placeholder="e.g. THE SIGNAL IS CLEAR TODAY. PROCEED.">
+    </div>
     <button onclick="updateSiteText()">UPDATE_TEXT</button>
   </div>
 
@@ -147,6 +151,7 @@
       document.getElementById('t-mood').value = data.mood || 'STABLE';
       document.getElementById('t-welcome').value = data.working_on || 'System ready.';
       document.getElementById('t-footer').value = data.footer || '© 2025 GUNKY_SYSTEMS. DATA_PORT: SECURE.';
+      document.getElementById('t-transmission').value = data.transmission || '';
     });
   }
 
@@ -154,11 +159,13 @@
     const mood = document.getElementById('t-mood').value;
     const welcome = document.getElementById('t-welcome').value;
     const footer = document.getElementById('t-footer').value;
+    const transmission = document.getElementById('t-transmission').value.trim();
 
     db.ref('site_text').set({
       mood: mood,
       working_on: welcome,
-      footer: footer
+      footer: footer,
+      transmission: transmission
     }).then(() => {
       alert("TEXT_UPDATED_SUCCESSFULLY");
     });

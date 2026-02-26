@@ -24,7 +24,7 @@
       0% { transform: scaleY(0.005) scaleX(0); filter: brightness(10); opacity: 0; }
       10% { transform: scaleY(0.005) scaleX(1); filter: brightness(10); opacity: 1; }
       40% { transform: scaleY(1) scaleX(1.1); filter: brightness(2); }
-      100% { transform: none; filter: none; opacity: 1; }
+ca      100% { transform: none; filter: none; opacity: 1; }
     }
     body::before {
       content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 1000;
@@ -618,7 +618,13 @@
   ];
   const dayIdx = Math.floor(Date.now() / 86400000) % transmissions.length;
   const txEl = document.getElementById('daily-transmission');
-  if (txEl) txEl.textContent = transmissions[dayIdx];
+  // Check Firebase for a manually set transmission first
+  firebase.database().ref('site_text/transmission').once('value').then(snap => {
+    const manual = snap.val();
+    if (txEl) txEl.textContent = (manual && manual.trim()) ? manual.trim() : transmissions[dayIdx];
+  }).catch(() => {
+    if (txEl) txEl.textContent = transmissions[dayIdx];
+  });
 
   // === GUESTBOOK ===
   firebase.database().ref('guestbook').orderByChild('ts').limitToLast(15).on('value', snap => {
