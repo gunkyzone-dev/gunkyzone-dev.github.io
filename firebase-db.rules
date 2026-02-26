@@ -2,9 +2,23 @@
   "rules": {
     "gunky_chat": {
       ".read": true,
-      "$msgId": {
-        ".write": "(!data.exists() && newData.exists() && newData.child('author').exists() && newData.child('text').exists() && newData.child('ts').exists()) || auth != null"
-      }
+      ".write": true
+    },
+    "online_users": {
+      ".read": true,
+      ".write": true
+    },
+    "site_content": {
+      ".read": true,
+      ".write": true
+    },
+    "media_metadata": {
+      ".read": true,
+      ".write": true
+    },
+    "presence": {
+      ".read": true,
+      ".write": true
     }
   }
 }

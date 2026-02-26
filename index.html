@@ -24,7 +24,7 @@
       0% { transform: scaleY(0.005) scaleX(0); filter: brightness(10); opacity: 0; }
       10% { transform: scaleY(0.005) scaleX(1); filter: brightness(10); opacity: 1; }
       40% { transform: scaleY(1) scaleX(1.1); filter: brightness(2); }
-      100% { transform: scaleY(1) scaleX(1); filter: brightness(1); opacity: 1; }
+      100% { transform: none; filter: none; opacity: 1; }
     }
     body::before {
       content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 1000;
@@ -198,7 +198,17 @@
     // Also try scrolling after a tiny delay in case the iframe or dynamic content pushes it down
     setTimeout(() => window.scrollTo(0, 0), 50);
 
-    firebase.database().ref('online_users').on('value', (s) => {
+    const amOnline = firebase.database().ref('.info/connected');
+    const userRef = firebase.database().ref('presence').push();
+    
+    amOnline.on('value', (snapshot) => {
+      if (snapshot.val()) {
+        userRef.onDisconnect().remove();
+        userRef.set(true);
+      }
+    });
+
+    firebase.database().ref('presence').on('value', (s) => {
       document.getElementById('user-count').textContent = 'USERS_ONLINE: ' + (s.numChildren());
     });
 
@@ -484,9 +494,10 @@
       all.forEach(item => {
         const thumb = item.thumbnail || item.thumb || 'https://via.placeholder.com/80x80/080505/cc0000?text=GUNKY';
         const target = `drawings.html?url=${encodeURIComponent(item.url)}&from=index`;
+        const safeTarget = target.replace(/'/g, "%27").replace(/"/g, "%22");
         
         container.innerHTML += `
-          <div class="drawing-item" onclick="location.href='${target}'">
+          <div class="drawing-item" onclick="location.href='${safeTarget}'">
             <div class="drawing-thumb"><img src="${thumb}"></div>
             <div>
               <div style="font-size:12px; color:var(--dim)">ID: ${Math.random().toString(16).slice(2,8).toUpperCase()}</div>
