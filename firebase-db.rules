@@ -19,6 +19,16 @@
     "presence": {
       ".read": true,
       ".write": true
+    },
+    "visit_count": {
+      ".read": true,
+      ".write": true
+    },
+    "guestbook": {
+      ".read": true,
+      "$entry": {
+        ".write": "!data.exists()"
+      }
     }
   }
 }

@@ -69,6 +69,23 @@
     .compact-thumb img { width: 100%; height: 100%; object-fit: cover; }
     .compact-info { display: flex; justify-content: space-between; width: 100%; align-items: center; }
 
+    /* NEW badge */
+    .new-badge { display: inline-block; background: var(--accent); color: #fff; font-size: 11px; padding: 0 5px; margin-left: 6px; vertical-align: middle; animation: blink 1s step-end infinite; }
+    /* Visit counter */
+    #visit-count { font-size: 14px; color: var(--dim); letter-spacing: 1px; }
+    /* Transmission of the day */
+    .transmission-box { border: 1px solid var(--accent2); padding: 12px 20px; background: #050000; margin: 15px 0 30px 0; color: var(--accent); font-size: 17px; }
+    .transmission-box::before { content: '// TRANSMISSION_OF_THE_DAY'; display: block; font-size: 12px; color: var(--accent2); margin-bottom: 6px; }
+    /* Guestbook */
+    .guestbook-form { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+    .guestbook-form input, .guestbook-form textarea { background: #000; border: 1px solid var(--border); color: #fff; padding: 8px 10px; font-family: var(--font-mono); font-size: 17px; resize: vertical; }
+    .guestbook-form button { background: var(--accent2); color: #fff; border: none; padding: 8px 20px; font-family: var(--font-mono); font-size: 17px; cursor: pointer; text-transform: uppercase; }
+    .guestbook-form button:hover { background: var(--accent); }
+    .guestbook-entry { border-bottom: 1px solid #1a0000; padding: 10px 0; }
+    .guestbook-entry .gb-name { color: var(--accent); font-size: 15px; }
+    .guestbook-entry .gb-msg { color: var(--text); font-size: 17px; margin-top: 2px; word-break: break-word; }
+    .guestbook-entry .gb-time { font-size: 12px; color: var(--dim); margin-top: 2px; }
+
     footer { padding: 40px 0; border-top: 1px solid var(--border); color: var(--dim); font-size: 14px; }
   </style>
 </head>
@@ -77,7 +94,10 @@
   <header>
     <div class="header-row">
       <div class="header-tag">SYS_STATUS: ONLINE // EST. 2025</div>
-      <div id="user-count">USERS_ONLINE: 0</div>
+      <div style="display:flex; gap:15px; align-items:center;">
+        <div id="visit-count">VISITS: —</div>
+        <div id="user-count">USERS_ONLINE: 0</div>
+      </div>
     </div>
     <h1 class="site-title"><span id="type-gunky"></span><span id="type-zone" class="zone-text"></span><span id="title-cursor" class="cursor"></span></h1>
     <p id="type-subtitle" style="color: var(--dim); min-height: 1.2em;"></p>
@@ -94,12 +114,24 @@
       <span id="type-welcome"></span><span id="welcome-cursor" class="cursor" style="display:none;"></span>
     </div>
 
+    <div id="daily-transmission" class="transmission-box">LOADING_SIGNAL...</div>
+
     <div class="section-label">> LATEST_ENTRIES</div>
     <div id="recent-entries" class="recent-grid">LOADING_DATA...</div>
 
     <div class="section-label">> LIVE_COMMS</div>
     <div style="border: 1px solid var(--border); background: #000;">
       <iframe src="chat-github.html?iframe=true" style="width:100%; height:400px; border:none;"></iframe>
+    </div>
+
+    <div class="section-label">> GUESTBOOK</div>
+    <div style="border: 1px solid var(--border); background: var(--bg2); padding: 20px;">
+      <div class="guestbook-form">
+        <input type="text" id="gb-name" placeholder="CALLSIGN_HERE" maxlength="30">
+        <textarea id="gb-msg" placeholder="LEAVE_A_TRANSMISSION..." maxlength="300" rows="3"></textarea>
+        <button onclick="submitGuestbook()">[ TRANSMIT ]</button>
+      </div>
+      <div id="guestbook-entries">LOADING_LOGS...</div>
     </div>
 
     <div class="section-label">> LATEST_COMICS</div>
@@ -495,12 +527,13 @@
         const thumb = item.thumbnail || item.thumb || 'https://via.placeholder.com/80x80/080505/cc0000?text=GUNKY';
         const target = `drawings.html?url=${encodeURIComponent(item.url)}&from=index`;
         const safeTarget = target.replace(/'/g, "%27").replace(/"/g, "%22");
+        const isNew = item.uploadedAt && (Date.now() - item.uploadedAt) < 604800000;
         
         container.innerHTML += `
           <div class="drawing-item" onclick="location.href='${safeTarget}'">
             <div class="drawing-thumb"><img src="${thumb}"></div>
             <div>
-              <div style="font-size:12px; color:var(--dim)">ID: ${Math.random().toString(16).slice(2,8).toUpperCase()}</div>
+              <div style="font-size:12px; color:var(--dim)">ID: ${Math.random().toString(16).slice(2,8).toUpperCase()}${isNew ? ' <span class="new-badge">NEW</span>' : ''}</div>
               <div style="color:var(--accent)">${item.title.toUpperCase()}</div>
             </div>
           </div>`;
@@ -525,13 +558,14 @@
       sorted.forEach(item => {
         const thumb = item.thumbnail || item.thumb || 'https://via.placeholder.com/80x80/080505/cc0000?text=GUNKY';
         const target = `comics.html?url=${encodeURIComponent(item.url)}&from=index`;
+        const isNew = item.uploadedAt && (Date.now() - item.uploadedAt) < 604800000;
         
         list.innerHTML += `
           <div class="compact-item" onclick="location.href='${target}'">
             <div class="compact-thumb"><img src="${thumb}"></div>
             <div class="compact-info">
               <div>
-                <div style="font-size:12px; color:var(--dim)">ID: ${Math.random().toString(16).slice(2,8).toUpperCase()}</div>
+                <div style="font-size:12px; color:var(--dim)">ID: ${Math.random().toString(16).slice(2,8).toUpperCase()}${isNew ? ' <span class="new-badge">NEW</span>' : ''}</div>
                 <div style="color:var(--accent)">${item.title.toUpperCase()}</div>
               </div>
             </div>
@@ -539,6 +573,76 @@
       });
       grid.appendChild(list);
     }
+  };
+
+  // === VISIT COUNTER ===
+  firebase.database().ref('visit_count').transaction(c => (c || 0) + 1);
+  firebase.database().ref('visit_count').on('value', snap => {
+    const el = document.getElementById('visit-count');
+    if (el) el.textContent = 'VISITS: ' + (snap.val() || 0).toLocaleString();
+  });
+
+  // === TRANSMISSION OF THE DAY ===
+  const transmissions = [
+    "THE SIGNAL IS CLEAR TODAY. PROCEED.",
+    "SOMETHING IS COMING. CHECK BACK SOON.",
+    "ALL SYSTEMS NOMINAL. FOR NOW.",
+    "THE WALLS ARE LISTENING.",
+    "NEW DATA INCOMING. STAND BY.",
+    "TODAY IS A GOOD DAY TO READ A COMIC.",
+    "TRANSMISSION CORRUPTED. PLEASE STAND BY.",
+    "THE ARCHIVE GROWS. SO DOES THE DARKNESS.",
+    "EYES OPEN. THEY ARE WATCHING.",
+    "STATUS: WEIRD. ALWAYS WEIRD.",
+    "DO NOT TURN OFF YOUR TERMINAL.",
+    "STAY A WHILE. STAY FOREVER.",
+    "UPLINK ESTABLISHED. SOUL DETECTED.",
+    "TODAY'S FORECAST: UNSETTLING.",
+    "ERROR IN MEMORY BLOCK 0x00. IGNORE IT.",
+    "THE GUNKYZONE APPRECIATES YOUR PRESENCE.",
+    "SIGNAL LOST... SIGNAL FOUND... YOU.",
+    "HE'S BEHIND YOU. DON'T LOOK.",
+    "THE NEXT CHAPTER IS ALMOST READY.",
+    "CLASSIFIED. BUT YOU ALREADY KNOW.",
+    "SCANNING FOR ANOMALIES... YOU QUALIFY.",
+    "REBOOT SCHEDULED FOR NEVER.",
+    "KEEP WATCHING THE SCREEN.",
+    "YOUR VISIT HAS BEEN LOGGED.",
+    "SYSTEM DREAMING. DO NOT DISTURB.",
+    "DOWNLOADING YOUR THOUGHTS...",
+    "YOU LOOK TIRED. STAY ANYWAY.",
+    "THE ARCHIVE NEVER FORGETS.",
+    "CONNECTION STABLE. MIND: UNSTABLE.",
+    "SOMETHING DREW YOU HERE. WE KNOW WHAT.",
+    "INITIALIZING DREAD PROTOCOL..."
+  ];
+  const dayIdx = Math.floor(Date.now() / 86400000) % transmissions.length;
+  const txEl = document.getElementById('daily-transmission');
+  if (txEl) txEl.textContent = transmissions[dayIdx];
+
+  // === GUESTBOOK ===
+  firebase.database().ref('guestbook').orderByChild('ts').limitToLast(15).on('value', snap => {
+    const container = document.getElementById('guestbook-entries');
+    if (!container) return;
+    const data = snap.val();
+    if (!data) { container.innerHTML = '<div style="color:var(--dim)">NO_TRANSMISSIONS_YET. BE_THE_FIRST.</div>'; return; }
+    const entries = Object.values(data).reverse();
+    container.innerHTML = entries.map(e => `
+      <div class="guestbook-entry">
+        <div class="gb-name">> ${(e.name||'ANONYMOUS').replace(/</g,'&lt;')}</div>
+        <div class="gb-msg">${(e.msg||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+        <div class="gb-time">${new Date(e.ts).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'})}</div>
+      </div>`).join('');
+  });
+
+  window.submitGuestbook = () => {
+    const name = (document.getElementById('gb-name').value.trim() || 'ANONYMOUS').slice(0, 30);
+    const msg  = document.getElementById('gb-msg').value.trim().slice(0, 300);
+    if (!msg) return;
+    firebase.database().ref('guestbook').push({ name, msg, ts: Date.now() }).then(() => {
+      document.getElementById('gb-name').value = '';
+      document.getElementById('gb-msg').value = '';
+    });
   };
 </script>
 </body>
