@@ -389,6 +389,7 @@
         pageObserver.disconnect();
       }
 
+      var renderAhead = mediaMode === 'image' ? '1200px 0px' : '3000px 0px';
       pageObserver = new IntersectionObserver(function (entries) {
         entries.forEach(function (entry) {
           if (entry.isIntersecting) {
@@ -402,7 +403,7 @@
             }
           }
         });
-      }, { root: document.getElementById('viewer-container'), rootMargin: '3000px 0px', threshold: [0.1] });
+      }, { root: document.getElementById('viewer-container'), rootMargin: renderAhead, threshold: [0.1] });
 
       for (var pageNum = 1; pageNum <= totalPages; pageNum++) {
         createPagePlaceholder(pageNum, pagesDiv);
@@ -410,26 +411,27 @@
 
       content.appendChild(pagesDiv);
 
-      // Background rendering of all pages sequentially
-      var currentPageToRender = 1;
-      function renderNextPageInBackground() {
-        if (currentPageToRender > totalPages) return;
-        var pageDiv = document.querySelector('.pdf-page[data-page-num="' + currentPageToRender + '"]');
-        if (pageDiv && !pageDiv.dataset.rendered) {
-          renderPageContent(pageDiv).then(function () {
+      if (mediaMode === 'pdf') {
+        // Keep the PDF fallback rendering pages in the background.
+        var currentPageToRender = 1;
+        function renderNextPageInBackground() {
+          if (currentPageToRender > totalPages) return;
+          var pageDiv = document.querySelector('.pdf-page[data-page-num="' + currentPageToRender + '"]');
+          if (pageDiv && !pageDiv.dataset.rendered) {
+            renderPageContent(pageDiv).then(function () {
+              currentPageToRender++;
+              setTimeout(renderNextPageInBackground, 100);
+            }).catch(function () {
+              currentPageToRender++;
+              setTimeout(renderNextPageInBackground, 100);
+            });
+          } else {
             currentPageToRender++;
-            setTimeout(renderNextPageInBackground, 100);
-          }).catch(function () {
-            currentPageToRender++;
-            setTimeout(renderNextPageInBackground, 100);
-          });
-        } else {
-          currentPageToRender++;
-          setTimeout(renderNextPageInBackground, 50);
+            setTimeout(renderNextPageInBackground, 50);
+          }
         }
+        setTimeout(renderNextPageInBackground, 1000);
       }
-      // Start background rendering after a short delay
-      setTimeout(renderNextPageInBackground, 1000);
     }
 
     function createPagePlaceholder(pageNum, container) {
