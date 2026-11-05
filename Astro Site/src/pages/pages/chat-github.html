@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
   
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
   <style>
@@ -233,16 +234,50 @@
   const msgContainer = document.getElementById('messages-container');
   const chatInput = document.getElementById('chat-input');
   const nameInput = document.getElementById('name-input');
+  chatInput.maxLength = 500;
 
-  // --- PRESENCE SYSTEM ---
-  const amOnline = firebase.database().ref('.info/connected');
-  const userRef = presenceRef.push();
-
-  amOnline.on('value', (snapshot) => {
-    if (snapshot.val()) {
-      userRef.onDisconnect().remove();
-      userRef.set(true);
+  let firebaseUserPromise;
+  function ensureFirebaseUser() {
+    if (firebaseUserPromise) return firebaseUserPromise;
+    const auth = firebase.auth();
+    if (auth.currentUser) {
+      firebaseUserPromise = Promise.resolve(auth.currentUser);
+      return firebaseUserPromise;
     }
+
+    firebaseUserPromise = new Promise((resolve, reject) => {
+      let unsubscribe = () => {};
+      unsubscribe = auth.onAuthStateChanged((user) => {
+        unsubscribe();
+        if (user) {
+          resolve(user);
+          return;
+        }
+        auth.signInAnonymously().then((credential) => resolve(credential.user)).catch(reject);
+      }, (error) => {
+        unsubscribe();
+        reject(error);
+      });
+    });
+    return firebaseUserPromise;
+  }
+
+  const firebaseUserReady = ensureFirebaseUser().then((user) => {
+    const connectionRef = presenceRef.child(user.uid).push();
+    firebase.database().ref('.info/connected').on('value', (snapshot) => {
+      if (snapshot.val()) {
+        connectionRef.onDisconnect().remove()
+          .then(() => connectionRef.set(true))
+          .catch((error) => console.error('Presence registration failed:', error));
+      }
+    }, (error) => {
+      console.error('Connection status listener failed:', error);
+    });
+    return user;
+  }).catch((error) => {
+    console.error('Firebase anonymous sign-in failed:', error);
+    document.getElementById('chat-status').textContent = 'SYS_STATUS: AUTHENTICATION_REQUIRED';
+    return null;
   });
 
   presenceRef.on('value', (snapshot) => {
@@ -250,6 +285,9 @@
       const count = snapshot.numChildren();
       document.getElementById('chat-status').innerHTML = `SYS_STATUS: ONLINE | USERS: ${count}`;
     }
+  }, (error) => {
+    console.error('Presence read failed:', error);
+    document.getElementById('chat-status').textContent = 'SYS_STATUS: PRESENCE_UNAVAILABLE';
   });
 
   // Check if we are in an iframe via query param
@@ -327,19 +365,32 @@
       msgContainer.appendChild(div);
     });
     msgContainer.scrollTop = msgContainer.scrollHeight;
+  }, (error) => {
+    console.error('Chat history read failed:', error);
+    document.getElementById('chat-status').textContent = 'SYS_STATUS: CHAT_UNAVAILABLE';
   });
 
-  function sendMessage() {
-    const text = chatInput.value.trim();
-    if (text !== "") {
-      db.push({
-        author: userSettings.name,
-        text: text,
-        color: userSettings.color,
-        style: userSettings.style,
+  async function sendMessage() {
+    const text = chatInput.value.trim().slice(0, 500);
+    if (!text) return;
+
+    try {
+      const user = await firebaseUserReady;
+      if (!user) throw new Error('Anonymous sign-in is unavailable.');
+      const color = /^#[0-9a-f]{6}$/i.test(userSettings.color) ? userSettings.color : '#ff0000';
+      const style = ['normal', 'bold', 'italic'].includes(userSettings.style) ? userSettings.style : 'normal';
+      await db.push({
+        uid: user.uid,
+        author: (userSettings.name || 'ANON').trim().slice(0, 30),
+        text,
+        color,
+        style,
         timestamp: Date.now()
       });
-      chatInput.value = "";
+      chatInput.value = '';
+    } catch (error) {
+      console.error('Chat message send failed:', error);
+      document.getElementById('chat-status').textContent = 'SYS_STATUS: MESSAGE_NOT_SENT';
     }
   }
 

@@ -232,6 +232,7 @@
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js" is:inline></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js" is:inline></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js" is:inline></script>
 <script src="/JS/site-paths.js" is:inline></script>
 
@@ -247,6 +248,35 @@
   };
 
   firebase.initializeApp(fbConfig);
+  let firebaseUserPromise;
+  function ensureFirebaseUser() {
+    if (firebaseUserPromise) return firebaseUserPromise;
+    const auth = firebase.auth();
+    if (auth.currentUser) {
+      firebaseUserPromise = Promise.resolve(auth.currentUser);
+      return firebaseUserPromise;
+    }
+
+    firebaseUserPromise = new Promise((resolve, reject) => {
+      let unsubscribe = () => {};
+      unsubscribe = auth.onAuthStateChanged((user) => {
+        unsubscribe();
+        if (user) {
+          resolve(user);
+          return;
+        }
+        auth.signInAnonymously().then((credential) => resolve(credential.user)).catch(reject);
+      }, (error) => {
+        unsubscribe();
+        reject(error);
+      });
+    });
+    return firebaseUserPromise;
+  }
+  const firebaseUserReady = ensureFirebaseUser().catch((error) => {
+    console.error('Firebase anonymous sign-in failed:', error);
+    return null;
+  });
 
   const LATEST_TEAR_ISSUE = {
     title: 'TEAR3',
@@ -335,18 +365,25 @@
     // Also try scrolling after a tiny delay in case the iframe or dynamic content pushes it down
     setTimeout(() => window.scrollTo(0, 0), 50);
 
-    const amOnline = firebase.database().ref('.info/connected');
-    const userRef = firebase.database().ref('presence').push();
-    
-    amOnline.on('value', (snapshot) => {
-      if (snapshot.val()) {
-        userRef.onDisconnect().remove();
-        userRef.set(true);
-      }
+    const presenceRef = firebase.database().ref('presence');
+    presenceRef.on('value', (s) => {
+      document.getElementById('user-count').textContent = 'USERS_ONLINE: ' + (s.numChildren());
+    }, (error) => {
+      console.error('Presence read failed:', error);
     });
 
-    firebase.database().ref('presence').on('value', (s) => {
-      document.getElementById('user-count').textContent = 'USERS_ONLINE: ' + (s.numChildren());
+    firebaseUserReady.then((user) => {
+      if (!user) return;
+      const connectionRef = presenceRef.child(user.uid).push();
+      firebase.database().ref('.info/connected').on('value', (snapshot) => {
+        if (snapshot.val()) {
+          connectionRef.onDisconnect().remove()
+            .then(() => connectionRef.set(true))
+            .catch((error) => console.error('Presence registration failed:', error));
+        }
+      }, (error) => {
+        console.error('Connection status listener failed:', error);
+      });
     });
 
     const defaultMessages = [
@@ -659,10 +696,16 @@
   };
 
   // === VISIT COUNTER ===
-  firebase.database().ref('visit_count').transaction(c => (c || 0) + 1);
+  firebaseUserReady.then((user) => {
+    if (!user) return;
+    return firebase.database().ref('visit_count').transaction(c => (c || 0) + 1)
+      .catch((error) => console.error('Visit count update failed:', error));
+  });
   firebase.database().ref('visit_count').on('value', snap => {
     const el = document.getElementById('visit-count');
     if (el) el.textContent = 'VISITS: ' + (snap.val() || 0).toLocaleString();
+  }, (error) => {
+    console.error('Visit count read failed:', error);
   });
 
   // === TRANSMISSION OF THE DAY ===
@@ -722,16 +765,24 @@
         <div class="gb-msg">${(e.msg||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
         <div class="gb-time">${new Date(e.ts).toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'})}</div>
       </div>`).join('');
+  }, (error) => {
+    console.error('Guestbook read failed:', error);
   });
 
-  window.submitGuestbook = () => {
+  window.submitGuestbook = async () => {
     const name = (document.getElementById('gb-name').value.trim() || 'ANONYMOUS').slice(0, 30);
     const msg  = document.getElementById('gb-msg').value.trim().slice(0, 300);
     if (!msg) return;
-    firebase.database().ref('guestbook').push({ name, msg, ts: Date.now() }).then(() => {
+    try {
+      const user = await firebaseUserReady;
+      if (!user) throw new Error('Anonymous sign-in is unavailable.');
+      await firebase.database().ref('guestbook').push({ uid: user.uid, name, msg, ts: Date.now() });
       document.getElementById('gb-name').value = '';
       document.getElementById('gb-msg').value = '';
-    });
+    } catch (error) {
+      console.error('Guestbook submission failed:', error);
+      alert('GUESTBOOK_SUBMISSION_FAILED');
+    }
   };
 </script>
 </body>

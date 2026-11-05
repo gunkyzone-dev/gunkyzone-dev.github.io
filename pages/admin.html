@@ -59,8 +59,18 @@
 
 <div class="container" id="login-box">
   <h1>ADMIN_AUTH</h1>
-  <input type="password" id="admin-pass" placeholder="ENTER_KEYCODE...">
-  <button onclick="checkAuth()" style="margin-top:10px">ACCESS</button>
+  <form onsubmit="event.preventDefault(); checkAuth();">
+    <div class="form-group">
+      <label for="admin-email">EMAIL</label>
+      <input type="email" id="admin-email" autocomplete="username" required>
+    </div>
+    <div class="form-group">
+      <label for="admin-password">PASSWORD</label>
+      <input type="password" id="admin-password" autocomplete="current-password" required>
+    </div>
+    <button type="submit">ACCESS</button>
+    <div id="auth-error" class="auth-error" role="alert" aria-live="polite"></div>
+  </form>
 </div>
 
 <div class="container" id="admin-panel" style="display:none">
@@ -121,6 +131,7 @@
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 <script>
   const firebaseConfig = {
@@ -136,15 +147,33 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
 
-  function checkAuth() {
-    // Basic local check for you
-    if(document.getElementById('admin-pass').value === 'LoveyDovey6833*') {
+  async function checkAuth() {
+    const errorElement = document.getElementById('auth-error');
+    errorElement.textContent = '';
+    try {
+      const credential = await firebase.auth().signInWithEmailAndPassword(
+        document.getElementById('admin-email').value.trim(),
+        document.getElementById('admin-password').value,
+      );
+      const adminSnapshot = await db.ref(`admins/${credential.user.uid}`).once('value');
+      if (adminSnapshot.val() !== true) {
+        await firebase.auth().signOut();
+        const error = new Error('This account is not on the admin allowlist.');
+        error.code = 'admin/not-allowlisted';
+        throw error;
+      }
+      document.getElementById('admin-password').value = '';
       document.getElementById('login-box').style.display = 'none';
       document.getElementById('admin-panel').style.display = 'block';
       loadEntries();
       loadSiteText();
-    } else {
-      alert("UNAUTHORIZED");
+    } catch (error) {
+      console.error('Admin sign-in failed:', error);
+      errorElement.textContent = error.code === 'admin/not-allowlisted'
+        ? 'ACCOUNT_NOT_AUTHORIZED'
+        : error.code === 'auth/operation-not-allowed'
+          ? 'ENABLE_EMAIL_PASSWORD_SIGN_IN_IN_FIREBASE'
+          : 'SIGN_IN_FAILED';
     }
   }
 

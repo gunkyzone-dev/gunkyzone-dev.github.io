@@ -43,6 +43,7 @@
     .del-btn { background: #330000; width: auto; padding: 2px 10px; font-size: 14px; }
     .edit-btn { background: #002a00; border: 1px solid #005500; color: #00cc00; width: auto; padding: 2px 10px; font-size: 14px; }
     .confirm-badge { display: none; color: #00ff00; border: 1px solid #00ff00; background: #001a00; padding: 6px 14px; font-size: 15px; text-align: center; margin-top: 8px; animation: fadeOut 0.5s ease 2.5s forwards; }
+    .auth-error { color: #ff6666; margin-top: 10px; }
     @keyframes fadeOut { to { opacity: 0; } }
     .edit-btn:hover { background: #004400; }
     .entry-btns { display: flex; gap: 6px; flex-shrink: 0; }
@@ -59,12 +60,24 @@
 
 <div class="container" id="login-box">
   <h1>ADMIN_AUTH</h1>
-  <input type="password" id="admin-pass" placeholder="ENTER_KEYCODE...">
-  <button onclick="checkAuth()" style="margin-top:10px">ACCESS</button>
+  <form onsubmit="event.preventDefault(); checkAuth();">
+    <div class="form-group">
+      <label for="admin-email">EMAIL</label>
+      <input type="email" id="admin-email" autocomplete="username" required>
+    </div>
+    <div class="form-group">
+      <label for="admin-password">PASSWORD</label>
+      <input type="password" id="admin-password" autocomplete="current-password" required>
+    </div>
+    <button type="submit">ACCESS</button>
+    <div id="auth-error" class="auth-error" role="alert" aria-live="polite"></div>
+  </form>
 </div>
 
 <div class="container" id="admin-panel" style="display:none">
   <h1>GUNKY_SYSTEM_CONTROL</h1>
+  <button onclick="signOutAdmin()" style="margin-bottom:20px">SIGN_OUT</button>
+  <div id="admin-status" class="auth-error" role="status" aria-live="polite"></div>
   
   <div class="entry-list" style="margin-bottom: 30px;">
     <h2 style="color:var(--dim)">SITE_TEXT_CONFIG</h2>
@@ -121,6 +134,7 @@
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 <script>
   const firebaseConfig = {
@@ -136,15 +150,50 @@
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
 
-  function checkAuth() {
-    // Basic local check for you
-    if(document.getElementById('admin-pass').value === 'LoveyDovey6833*') {
+  function reportAdminError(action, error) {
+    console.error(`${action} failed:`, error);
+    const status = document.getElementById('admin-status');
+    if (status) status.textContent = `${action.toUpperCase()}_FAILED`;
+  }
+
+  async function checkAuth() {
+    const errorElement = document.getElementById('auth-error');
+    errorElement.textContent = '';
+    try {
+      const credential = await firebase.auth().signInWithEmailAndPassword(
+        document.getElementById('admin-email').value.trim(),
+        document.getElementById('admin-password').value,
+      );
+      const adminSnapshot = await db.ref(`admins/${credential.user.uid}`).once('value');
+      if (adminSnapshot.val() !== true) {
+        await firebase.auth().signOut();
+        const error = new Error('This account is not on the admin allowlist.');
+        error.code = 'admin/not-allowlisted';
+        throw error;
+      }
+      document.getElementById('admin-password').value = '';
       document.getElementById('login-box').style.display = 'none';
       document.getElementById('admin-panel').style.display = 'block';
       loadEntries();
       loadSiteText();
-    } else {
-      alert("UNAUTHORIZED");
+    } catch (error) {
+      console.error('Admin sign-in failed:', error);
+      errorElement.textContent = error.code === 'admin/not-allowlisted'
+        ? 'ACCOUNT_NOT_AUTHORIZED'
+        : error.code === 'auth/operation-not-allowed'
+          ? 'ENABLE_EMAIL_PASSWORD_SIGN_IN_IN_FIREBASE'
+          : 'SIGN_IN_FAILED';
+    }
+  }
+
+  async function signOutAdmin() {
+    try {
+      await firebase.auth().signOut();
+      document.getElementById('admin-panel').style.display = 'none';
+      document.getElementById('login-box').style.display = 'block';
+      document.getElementById('admin-status').textContent = '';
+    } catch (error) {
+      reportAdminError('sign out', error);
     }
   }
 
@@ -155,7 +204,7 @@
       document.getElementById('t-welcome').value = data.working_on || 'System ready.';
       document.getElementById('t-footer').value = data.footer || '© 2025 GUNKY_SYSTEMS. DATA_PORT: SECURE.';
       document.getElementById('t-transmission').value = data.transmission || '';
-    });
+    }).catch(error => reportAdminError('load site text', error));
   }
 
   function updateSiteText() {
@@ -176,7 +225,8 @@
       void badge.offsetWidth; // reflow to restart animation
       badge.style.animation = 'fadeOut 0.5s ease 2.5s forwards';
       setTimeout(() => { badge.style.display = 'none'; }, 3100);
-    });
+      document.getElementById('admin-status').textContent = '';
+    }).catch(error => reportAdminError('update site text', error));
   }
 
   function uploadMedia() {
@@ -196,7 +246,7 @@
     }).then(() => {
       alert("UPLOAD_SUCCESSFUL");
       location.reload();
-    });
+    }).catch(error => reportAdminError('upload media', error));
   }
 
   function loadEntries() {
@@ -213,7 +263,7 @@
                 url: item.url,
                 thumbnail: item.thumbnail,
                 uploadedAt: item.uploadedAt || Date.now()
-              });
+              }).catch(error => reportAdminError('seed media metadata', error));
             });
           }
         });
@@ -252,7 +302,7 @@
                 </div>
               </div>`;
             list.appendChild(wrapper);
-          });
+          }, error => reportAdminError('load media metadata', error));
         }
       });
     });
@@ -269,12 +319,14 @@
     const thumb = document.getElementById(`edit-thumb-${cat}-${key}`).value.trim();
     if (!title || !url || !thumb) return alert('MISSING_DATA');
     db.ref(`media_metadata/${cat}/${key}`).update({ title, url, thumbnail: thumb })
-      .then(() => alert('ENTRY_UPDATED'));
+      .then(() => alert('ENTRY_UPDATED'))
+      .catch(error => reportAdminError('save media entry', error));
   };
 
   window.deleteEntry = (cat, key) => {
     if(confirm("REDACT ENTRY?")) {
-      db.ref(`media_metadata/${cat}/${key}`).remove();
+      db.ref(`media_metadata/${cat}/${key}`).remove()
+        .catch(error => reportAdminError('delete media entry', error));
     }
   };
 </script>
