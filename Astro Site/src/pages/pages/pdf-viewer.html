@@ -197,6 +197,19 @@
     .viewer-container:fullscreen .fullscreen-back-btn {
       display: block;
     }
+
+    .controls { gap: 10px; padding: 10px clamp(12px, 2vw, 20px); }
+    .pdf-pages { max-width: 960px; }
+    @media (max-width: 640px) {
+      body { font-size: 17px; }
+      .controls { justify-content: center; gap: 7px; padding: 8px 10px; }
+      .controls button { padding: 5px 9px; font-size: 16px; }
+      .controls .info { gap: 5px; }
+      .controls .fullscreen-btn { margin-left: 0; }
+      input[type="range"] { width: 88px; }
+      .viewer-container { padding: 12px; }
+      .pdf-page { margin-bottom: 18px; }
+    }
   </style>
 </head>
 <body>
