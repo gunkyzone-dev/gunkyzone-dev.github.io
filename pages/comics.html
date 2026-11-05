@@ -39,7 +39,7 @@
 <body>
 <div class="site-wrapper">
   <h1 style="color: var(--accent); font-size: 40px;">> COMIC_ARCHIVE</h1>
-  <a href="index.html" style="color: #5a3a3a; text-decoration: none;">[ BACK_TO_ROOT ]</a>
+  <a href="../index.html" style="color: #5a3a3a; text-decoration: none;">[ BACK_TO_ROOT ]</a>
   
   <div id="comic-grid" class="grid"></div>
 </div>
@@ -53,6 +53,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="../JS/site-paths.js"></script>
 
 <script>
   const fbConfig = {
@@ -66,15 +67,30 @@
   };
   firebase.initializeApp(fbConfig);
 
+  const LATEST_TEAR_ISSUE = {
+    title: 'TEAR3',
+    url: '/comics/TEAR3_compressed.pdf',
+    thumbnail: '/thumbnails/TEAR3_THUMB.png',
+    uploadedAt: Date.now()
+  };
+
+  function ensureLatestTearIssue(comics) {
+    const list = Array.isArray(comics) ? [...comics] : [];
+    const hasLatest = list.some(item => resolveSiteUrl(item && item.url).toLowerCase() === LATEST_TEAR_ISSUE.url.toLowerCase());
+    if (!hasLatest) {
+      list.push(LATEST_TEAR_ISSUE);
+    }
+    return list.sort((a, b) => (b.uploadedAt || 0) - (a.uploadedAt || 0));
+  }
+
   function loadComics() {
     // First try to load from Firebase, fallback to media.json
     if (typeof firebase !== 'undefined' && firebase.database) {
       firebase.database().ref('media_metadata/comics').once('value').then(snap => {
         const data = snap.val();
         if (data) {
-          const comics = Object.values(data).sort((a, b) => b.uploadedAt - a.uploadedAt);
+          const comics = ensureLatestTearIssue(Object.values(data));
           renderComics(comics);
-          preloadPDFs(comics);
         } else {
           fetchLocalComics();
         }
@@ -85,59 +101,93 @@
   }
 
   function fetchLocalComics() {
-    fetch('media.json').then(r => r.json()).then(data => {
-      renderComics(data.comics || []);
-      preloadPDFs(data.comics || []);
+    fetch('../data/media.json').then(r => r.json()).then(data => {
+      const comics = ensureLatestTearIssue(data.comics || []);
+      renderComics(comics);
     });
   }
 
-  function preloadPDFs(comics) {
-    const pdfs = comics.filter(c => c.url && c.url.toLowerCase().endsWith('.pdf')).map(c => c.url);
-    if (pdfs.length === 0) return;
-
-    let i = 0;
-    function loadNext() {
-      if (i >= pdfs.length) return;
-      fetch(pdfs[i], { cache: 'force-cache' })
-        .then(res => res.blob())
-        .then(() => {
-          i++;
-          setTimeout(loadNext, 500);
-        })
-        .catch(e => {
-          console.log('Prefetch failed for', pdfs[i]);
-          i++;
-          setTimeout(loadNext, 500);
-        });
+  function normalizeMediaUrl(url) {
+    let normalized = String(url || '').trim();
+    // Handle accidentally pre-encoded URLs from admin data.
+    for (let i = 0; i < 2; i++) {
+      if (!/%[0-9A-Fa-f]{2}/.test(normalized)) break;
+      try {
+        normalized = decodeURIComponent(normalized);
+      } catch (_) {
+        break;
+      }
     }
-    // Start preloading after a short delay
-    setTimeout(loadNext, 1000);
+    return resolveSiteUrl(normalized);
   }
 
   function renderComics(comics) {
     const grid = document.getElementById('comic-grid');
     grid.innerHTML = '';
     comics.forEach(comic => {
+      const comicUrl = normalizeMediaUrl(comic.url);
+      const safeUrl = comicUrl.replace(/"/g, '&quot;');
+      const safeThumbnail = resolveSiteUrl(comic.thumbnail || '').replace(/"/g, '&quot;');
       grid.innerHTML += `
-        <div class="comic-card" onclick="openComic('${comic.url}')">
-          <img class="thumb" src="${comic.thumbnail || ''}" alt="THUMB">
+        <div class="comic-card" data-url="${safeUrl}" onclick="openComic(this.dataset.url)">
+          <img class="thumb" src="${safeThumbnail}" loading="lazy" decoding="async" alt="THUMB">
           <div class="info">${comic.title}</div>
         </div>`;
     });
   }
 
   function openComic(url) {
+    const normalizedUrl = normalizeMediaUrl(url);
     const modal = document.getElementById('comic-modal');
     const iframe = document.getElementById('comic-iframe');
-    // We send the file to your custom viewer
-    iframe.src = `pdf-viewer.html?url=${encodeURIComponent(url)}`;
+    const viewerUrl = new URL('pdf-viewer.html', document.baseURI);
+
+    // If the stored URL is a PDF but a folder of images exists alongside it,
+    // prefer opening the folder (which should contain a pages.json manifest).
+    if (normalizedUrl && normalizedUrl.toLowerCase().endsWith('.pdf')) {
+      var base = normalizedUrl.replace(/\.pdf$/i, '');
+      var candidates = [];
+      // Prefer folder without the "_compressed" suffix if present (e.g. TEAR1_compressed.pdf -> /comics/TEAR1/)
+      if (/_compressed$/i.test(base)) candidates.push(base.replace(/_compressed$/i, '/') );
+      // Then try the base name as a folder
+      candidates.push(base + '/');
+
+      // Try candidates sequentially and use the first that has a pages.json manifest
+      var tried = 0;
+      function tryNextCandidate() {
+        if (tried >= candidates.length) {
+          viewerUrl.searchParams.set('url', normalizedUrl);
+          iframe.src = viewerUrl.href;
+          modal.style.display = 'flex';
+          return;
+        }
+        var candidate = candidates[tried++];
+        fetch(candidate + 'pages.json').then(function (resp) {
+          if (resp.ok) {
+            viewerUrl.searchParams.set('url', candidate);
+            iframe.src = viewerUrl.href;
+            modal.style.display = 'flex';
+          } else {
+            tryNextCandidate();
+          }
+        }).catch(function () {
+          tryNextCandidate();
+        });
+      }
+      tryNextCandidate();
+      return;
+    }
+
+    // Default: open the provided URL
+    viewerUrl.searchParams.set('url', normalizedUrl);
+    iframe.src = viewerUrl.href;
     modal.style.display = 'flex';
   }
 
   function closeComic() {
     const params = new URLSearchParams(window.location.search);
     if (params.get('from') === 'index') {
-      window.location.href = 'index.html';
+      window.location.href = '../index.html';
       return;
     }
     document.getElementById('comic-modal').style.display = 'none';

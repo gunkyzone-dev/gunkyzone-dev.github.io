@@ -39,7 +39,7 @@
 <body>
 <div class="site-wrapper">
   <h1 style="color: var(--accent); font-size: 40px;">> DRAWING_ARCHIVE</h1>
-  <a href="index.html" style="color: #5a3a3a; text-decoration: none;">[ BACK_TO_ROOT ]</a>
+  <a href="../index.html" style="color: #5a3a3a; text-decoration: none;">[ BACK_TO_ROOT ]</a>
   
   <div id="drawing-grid" class="grid"></div>
 </div>
@@ -53,6 +53,7 @@
 
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="../JS/site-paths.js"></script>
 
 <script>
   const fbConfig = {
@@ -84,7 +85,7 @@
   }
 
   function fetchLocalDrawings() {
-    fetch('media.json').then(r => r.json()).then(data => {
+    fetch('../data/media.json').then(r => r.json()).then(data => {
       renderDrawings(data.drawings || []);
     });
   }
@@ -97,10 +98,11 @@
       return;
     }
     drawings.forEach(drawing => {
-      const safeUrl = drawing.url.replace(/"/g, '&quot;');
+      const safeUrl = resolveSiteUrl(drawing.url).replace(/"/g, '&quot;');
+      const safeThumbnail = resolveSiteUrl(drawing.thumbnail || drawing.url).replace(/"/g, '&quot;');
       grid.innerHTML += `
         <div class="drawing-card" data-url="${safeUrl}" onclick="openDrawing(this.dataset.url)">
-          <img class="thumb" src="${drawing.thumbnail || drawing.url}" alt="THUMB">
+          <img class="thumb" src="${safeThumbnail}" loading="lazy" decoding="async" alt="THUMB">
           <div class="info">${drawing.title}</div>
         </div>`;
     });
@@ -109,14 +111,14 @@
   function openDrawing(url) {
     const modal = document.getElementById('drawing-modal');
     const img = document.getElementById('drawing-img');
-    img.src = url;
+    img.src = resolveSiteUrl(url);
     modal.style.display = 'block';
   }
 
   function closeDrawing() {
     const params = new URLSearchParams(window.location.search);
     if (params.get('from') === 'index') {
-      window.location.href = 'index.html';
+      window.location.href = '../index.html';
       return;
     }
     document.getElementById('drawing-modal').style.display = 'none';

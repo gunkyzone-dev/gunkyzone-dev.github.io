@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GunkyZone — Drawings</title>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #020202; --border: #1a1a1a; --text: #d4c0c0;
+      --accent: #9b0000; --font-disp: 'VT323', monospace;
+    }
+    body { 
+      background: var(--bg); color: var(--text); font-family: var(--font-disp); padding: 20px; 
+    }
+    @keyframes terminalOn {
+      0% { opacity: 0; transform: scaleY(0.95) scaleX(0.95); filter: brightness(3) contrast(2); }
+      20% { opacity: 1; transform: scaleY(1.02) scaleX(1.02); filter: brightness(1.5) contrast(1.5); }
+      40% { opacity: 0.8; transform: scaleY(0.98) scaleX(0.98); filter: brightness(1.2); }
+      60% { opacity: 1; transform: scaleY(1.01) scaleX(1.01); filter: brightness(1.1); }
+      80% { opacity: 0.9; transform: scaleY(0.99) scaleX(0.99); filter: brightness(1.05); }
+      100% { opacity: 1; transform: none; filter: none; }
+    }
+    .site-wrapper { max-width: 900px; margin: 0 auto; animation: terminalOn 0.4s ease-out forwards; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 20px; margin-top: 40px; }
+    .drawing-card { border: 1px solid var(--border); background: #050505; cursor: pointer; transition: 0.2s; }
+    .drawing-card:hover { border-color: var(--accent); transform: translateY(-3px); }
+    .thumb { width: 100%; aspect-ratio: 1/1; background: #111; object-fit: cover; border-bottom: 1px solid var(--border); }
+    .info { padding: 10px; text-align: center; text-transform: uppercase; letter-spacing: 1px; }
+    
+    /* MODAL */
+    #drawing-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 9999; }
+    #modal-content { position: relative; width: 90vw; height: 90vh; margin: 5vh auto; text-align: center; }
+    #drawing-img { width: 100%; height: 100%; object-fit: contain; border: 1px solid var(--accent); background: #000; }
+    .close-modal { position: absolute; top: -30px; right: 0; color: var(--accent); cursor: pointer; font-size: 24px; z-index: 10000; background: #000; padding: 0 5px; }
+  </style>
+</head>
+<body>
+<div class="site-wrapper">
+  <h1 style="color: var(--accent); font-size: 40px;">> DRAWING_ARCHIVE</h1>
+  <a href="../index.html" style="color: #5a3a3a; text-decoration: none;">[ BACK_TO_ROOT ]</a>
+  
+  <div id="drawing-grid" class="grid"></div>
+</div>
+
+<div id="drawing-modal" onclick="if(event.target === this) closeDrawing()">
+  <div id="modal-content">
+    <span class="close-modal" onclick="closeDrawing()">[ CLOSE_X ]</span>
+    <img id="drawing-img" src="" alt="DRAWING">
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+<script src="../JS/site-paths.js"></script>
+
+<script>
+  const fbConfig = {
+    apiKey: "AIzaSyD1L4Mmgnbl0W7lk1rnaRu5wv61TSFhJqM",
+    authDomain: "gunkychat.firebaseapp.com",
+    databaseURL: "https://gunkychat-default-rtdb.firebaseio.com",
+    projectId: "gunkychat",
+    storageBucket: "gunkychat.firebasestorage.app",
+    messagingSenderId: "423489767287",
+    appId: "1:423489767287:web:ce847768781b0f589dc372"
+  };
+  firebase.initializeApp(fbConfig);
+
+  function loadDrawings() {
+    // First try to load from Firebase, fallback to media.json
+    if (typeof firebase !== 'undefined' && firebase.database) {
+      firebase.database().ref('media_metadata/drawings').once('value').then(snap => {
+        const data = snap.val();
+        if (data) {
+          const drawings = Object.values(data).sort((a, b) => b.uploadedAt - a.uploadedAt);
+          renderDrawings(drawings);
+        } else {
+          fetchLocalDrawings();
+        }
+      }).catch(() => fetchLocalDrawings());
+    } else {
+      fetchLocalDrawings();
+    }
+  }
+
+  function fetchLocalDrawings() {
+    fetch('../data/media.json').then(r => r.json()).then(data => {
+      renderDrawings(data.drawings || []);
+    });
+  }
+
+  function renderDrawings(drawings) {
+    const grid = document.getElementById('drawing-grid');
+    grid.innerHTML = '';
+    if (!drawings || drawings.length === 0) {
+      grid.innerHTML = '<div style="color: #5a3a3a;">NO_DATA_FOUND</div>';
+      return;
+    }
+    drawings.forEach(drawing => {
+      const safeUrl = resolveSiteUrl(drawing.url).replace(/"/g, '&quot;');
+      const safeThumbnail = resolveSiteUrl(drawing.thumbnail || drawing.url).replace(/"/g, '&quot;');
+      grid.innerHTML += `
+        <div class="drawing-card" data-url="${safeUrl}" onclick="openDrawing(this.dataset.url)">
+          <img class="thumb" src="${safeThumbnail}" loading="lazy" decoding="async" alt="THUMB">
+          <div class="info">${drawing.title}</div>
+        </div>`;
+    });
+  }
+
+  function openDrawing(url) {
+    const modal = document.getElementById('drawing-modal');
+    const img = document.getElementById('drawing-img');
+    img.src = resolveSiteUrl(url);
+    modal.style.display = 'block';
+  }
+
+  function closeDrawing() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('from') === 'index') {
+      window.location.href = '../index.html';
+      return;
+    }
+    document.getElementById('drawing-modal').style.display = 'none';
+    document.getElementById('drawing-img').src = '';
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+
+  window.onload = () => {
+    loadDrawings();
+    
+    const params = new URLSearchParams(window.location.search);
+    const requestedUrl = params.get('url');
+    if (requestedUrl) {
+      openDrawing(requestedUrl);
+    }
+  };
+</script>
+</body>
+</html>

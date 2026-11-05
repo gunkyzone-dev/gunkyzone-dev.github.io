@@ -1,0 +1,10 @@
+{
+  "comics": [
+    {"title": "TEAR1", "url": "/comics/TEAR1/", "thumbnail": "/thumbnails/TEAR1_THUMB.png", "uploadedAt": 1740355200000},
+    {"title": "TEAR2", "url": "/comics/TEAR2_compressed.pdf", "thumbnail": "/thumbnails/TEAR2_THUMB.png", "uploadedAt": 1740441600000},
+    {"title": "TEAR3", "url": "/comics/TEAR3_compressed.pdf", "thumbnail": "/thumbnails/TEAR3_THUMB.png", "uploadedAt": 1773273600000}
+  ],
+  "drawings": [],
+  "stories": [],
+  "gallery": []
+}

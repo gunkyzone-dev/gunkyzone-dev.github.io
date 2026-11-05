@@ -104,12 +104,12 @@
   
   <div class="form-group">
     <label>FILE_URL (PDF or Image)</label>
-    <input type="text" id="m-url" placeholder="e.g. drawings/TEAR3preview.png">
+    <input type="text" id="m-url" placeholder="e.g. /drawings/TEAR3preview.png">
   </div>
   
   <div class="form-group">
     <label>THUMBNAIL_URL (Required for grid)</label>
-    <input type="text" id="m-thumb" placeholder="e.g. thumbnails/TEAR3preview_thumb.png">
+    <input type="text" id="m-thumb" placeholder="e.g. /thumbnails/TEAR3preview_thumb.png">
   </div>
 
   <button onclick="uploadMedia()">DEPLOY_TO_SITE</button>
@@ -203,7 +203,7 @@
     const list = document.getElementById('list-contents');
 
     // Seed media.json into Firebase for any category that has no Firebase entries yet
-    fetch('media.json').then(r => r.json()).then(localData => {
+    fetch('../data/media.json').then(r => r.json()).then(localData => {
       ['comics', 'drawings'].forEach(cat => {
         db.ref('media_metadata/' + cat).once('value').then(snap => {
           if (!snap.exists()) {

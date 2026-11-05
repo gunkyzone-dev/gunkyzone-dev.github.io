@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GunkyZone - VIEWER</title>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="../JS/site-paths.js"></script>
+
+
+  <style>
+    :root {
+      --bg: #020202; --bg2: #080505; --border: #2a0000; --dim: #5a3a3a;
+      --text: #d4c0c0; --accent: #ff0000; --accent2: #9b0000;
+      --font-mono: 'VT323', monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 19px;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: clip; /* clip instead of hidden so child scrollbars still work */
+      animation: terminalOn 0.4s ease-out forwards;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    @keyframes terminalOn {
+      0% { opacity: 0; transform: scaleY(0.95) scaleX(0.95); filter: brightness(3) contrast(2); }
+      20% { opacity: 1; transform: scaleY(1.02) scaleX(1.02); filter: brightness(1.5) contrast(1.5); }
+      40% { opacity: 0.8; transform: scaleY(0.98) scaleX(0.98); filter: brightness(1.2); }
+      60% { opacity: 1; transform: scaleY(1.01) scaleX(1.01); filter: brightness(1.1); }
+      80% { opacity: 0.9; transform: scaleY(0.99) scaleX(0.99); filter: brightness(1.05); }
+      100% { opacity: 1; transform: none; filter: none; }
+    }
+
+    /* CRT Overlays */
+    body::before {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 1000;
+      background: repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(0,0,0,0.2) 2px, rgba(0,0,0,0.2) 4px);
+      animation: flicker 0.1s infinite;
+    }
+    @keyframes flicker { 0% { opacity: 0.95; } 100% { opacity: 0.97; } }
+    body::after {
+      content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 999;
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.7) 100%);
+    }
+
+    .controls {
+      background: var(--bg2);
+      border-bottom: 2px solid var(--border);
+      padding: 10px 20px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+      z-index: 10;
+      position: relative;
+    }
+
+    button {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--accent2);
+      padding: 5px 15px;
+      cursor: pointer;
+      font-family: var(--font-mono);
+      font-size: 18px;
+      text-transform: uppercase;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: var(--accent2);
+      color: #fff;
+      animation: jitter 0.2s infinite;
+      text-shadow: 2px 0 var(--accent), -2px 0 #00ffff;
+    }
+    @keyframes jitter { 0% { transform: translate(2px, -1px); } 50% { transform: translate(-1px, 1px); } }
+
+    button:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+      animation: none;
+      text-shadow: none;
+    }
+
+    .info {
+      color: var(--dim);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .info span { color: var(--accent); }
+
+    /* Custom Range Slider */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 120px;
+      background: transparent;
+    }
+    input[type="range"]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 4px;
+      background: var(--border);
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 16px;
+      width: 8px;
+      background: var(--accent);
+      margin-top: -6px;
+      cursor: pointer;
+    }
+
+    .viewer-container {
+      flex: 1;
+      overflow-x: auto;
+      overflow-y: auto;
+      padding: 20px;
+      position: relative;
+      z-index: 5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Custom Scrollbar */
+    .viewer-container::-webkit-scrollbar { width: 8px; height: 8px; }
+    .viewer-container::-webkit-scrollbar-track { background: var(--bg); border-left: 1px solid var(--border); border-top: 1px solid var(--border); }
+    .viewer-container::-webkit-scrollbar-thumb { background: var(--accent2); }
+    .viewer-container::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+    .pdf-pages {
+      padding-bottom: 40px;
+      width: 100%;
+      max-width: 900px;
+    }
+
+    .pdf-page {
+      border: 1px solid var(--border);
+      background: #000;
+      width: 100%;
+      margin: 0 auto 30px auto;
+      transition: width 0.2s ease;
+      position: relative;
+    }
+    
+    .pdf-page::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      box-shadow: inset 0 0 20px rgba(255,0,0,0.05);
+      pointer-events: none;
+    }
+
+    .pdf-page canvas,
+    .pdf-page img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .loading {
+      text-align: center;
+      color: var(--accent);
+      padding: 40px;
+      animation: blink 1s step-end infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .fullscreen-btn { margin-left: auto; }
+
+    .viewer-container:fullscreen {
+      background: var(--bg);
+      padding: 40px 20px;
+    }
+
+    .fullscreen-back-btn {
+      display: none;
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 1000;
+      background: var(--bg2);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+
+    .viewer-container:fullscreen .fullscreen-back-btn {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <button onclick="previousPage()" id="prev-btn">[ SCROLL_UP ]</button>
+    <span class="info">PAGE <span id="page-num">1</span> // <span id="page-count">0</span></span>
+    <button onclick="nextPage()" id="next-btn">[ SCROLL_DOWN ]</button>
+    <span class="info" style="margin-left: 20px;">ZOOM:</span>
+    <input type="range" id="zoom-slider" min="50" max="200" value="75" onchange="updateZoom()">
+      <span class="info"><span id="zoom-level">75</span>%</span>
+    <button class="fullscreen-btn" onclick="toggleFullscreen()">[ FULLSCREEN ]</button>
+  </div>
+
+  <div class="viewer-container" id="viewer-container">
+    <button class="fullscreen-back-btn" onclick="toggleFullscreen()">[ EXIT_FULLSCREEN ]</button>
+    <div id="pdf-content">
+      <div class="loading">LOADING_DATA...</div>
+    </div>
+  </div>
+
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    // Recognized image extensions -> treated as an "image gallery" viewer
+    var IMAGE_EXTENSIONS = ['webp', 'png', 'jpg', 'jpeg', 'gif', 'avif'];
+
+    var mediaMode = 'pdf'; // 'pdf' | 'image'
+    var currentPdf = null;
+    var imageUrls = [];
+    var totalPages = 0;
+    var zoomLevel = 75;
+    var pageObserver = null;
+
+    function normalizeUrl(url) {
+      var normalized = String(url || '').trim();
+      // Support URLs that were saved pre-encoded in Firebase/admin.
+      for (var i = 0; i < 2; i++) {
+        if (!/%[0-9A-Fa-f]{2}/.test(normalized)) break;
+        try {
+          normalized = decodeURIComponent(normalized);
+        } catch (_) {
+          break;
+        }
+      }
+      return resolveSiteUrl(normalized);
+    }
+
+    function getExtension(url) {
+      var clean = String(url || '').split('?')[0].split('#')[0];
+      var match = clean.match(/\.([a-zA-Z0-9]+)$/);
+      return match ? match[1].toLowerCase() : '';
+    }
+
+    // Reads query params and figures out:
+    // - which file(s) to load
+    // - whether this is a PDF or an image gallery
+    //
+    // Supported forms:
+    //   ?url=path/to/file.pdf
+    //   ?url=path/to/page1.webp&url=path/to/page2.webp   (repeated param = multi-page gallery)
+    //   ?urls=page1.webp,page2.webp,page3.webp            (comma-separated list)
+    //   ?type=image or ?type=pdf                          (optional, forces mode)
+    function getMediaConfig() {
+      var params = new URLSearchParams(window.location.search);
+      var forcedType = (params.get('type') || '').toLowerCase();
+
+      var rawUrls = params.getAll('url');
+      if (rawUrls.length === 0) {
+        var urlsParam = params.get('urls');
+        if (urlsParam) {
+          rawUrls = urlsParam.split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+        }
+      }
+
+      var urls = rawUrls.map(normalizeUrl).filter(Boolean);
+      if (urls.length === 0) return { mode: null, urls: [] };
+
+      var mode;
+      if (forcedType === 'image' || forcedType === 'pdf') {
+        mode = forcedType;
+      } else {
+        var ext = getExtension(urls[0]);
+        mode = IMAGE_EXTENSIONS.indexOf(ext) !== -1 ? 'image' : 'pdf';
+      }
+
+      return { mode: mode, urls: urls };
+    }
+
+    function loadMedia() {
+      var config = getMediaConfig();
+      var content = document.getElementById('pdf-content');
+
+      if (!config.mode || config.urls.length === 0) {
+        content.innerHTML = '<div class="loading">NO_DATA_PROVIDED</div>';
+        return;
+      }
+
+      content.innerHTML = '<div class="loading">LOADING_DATA...</div>';
+
+      // Helper: fall back to the original behavior (PDF vs image list)
+      function proceedWithOriginal() {
+        mediaMode = config.mode;
+        if (mediaMode === 'pdf') {
+          // Only the first url is used for PDF mode (a PDF is already multi-page internally).
+          loadPdfDocument(config.urls[0]);
+        } else {
+          loadImageGallery(config.urls);
+        }
+      }
+
+      // If the first url looks like a folder (no file extension or trailing slash),
+      // attempt to load a pages.json manifest from that folder and treat it as an image gallery.
+      var firstUrl = config.urls[0];
+      var ext = getExtension(firstUrl);
+      if (ext === '' || firstUrl.endsWith('/')) {
+        var folderUrl = firstUrl.endsWith('/') ? firstUrl : firstUrl + '/';
+        var manifestUrl = folderUrl + 'pages.json';
+
+        // Try to fetch the manifest; if it exists and contains an array of filenames,
+        // map them into full, encoded URLs and open as an image gallery.
+        fetch(manifestUrl).then(function (resp) {
+          if (!resp.ok) throw new Error('no-manifest');
+          return resp.json();
+        }).then(function (list) {
+          if (!Array.isArray(list) || list.length === 0) throw new Error('invalid-manifest');
+          // Resolve the folder prefix only (it has no special chars); the manifest
+          // filenames are encoded separately and appended as-is so that characters
+          // like "#" and spaces stay percent-encoded (resolveSiteUrl would decode
+          // them again and break the URL, e.g. "#" turning into a fragment marker).
+          var resolvedFolder = resolveSiteUrl(folderUrl);
+          if (!resolvedFolder.endsWith('/')) resolvedFolder += '/';
+          var urls = list.map(function (name) {
+            var encoded = String(name).split('/').map(encodeURIComponent).join('/');
+            return resolvedFolder + encoded;
+          }).filter(Boolean);
+
+          if (urls.length === 0) throw new Error('empty-urls');
+          mediaMode = 'image';
+          loadImageGallery(urls);
+        }).catch(function () {
+          // If manifest is missing or invalid, fall back to original behavior (PDF or explicit urls)
+          proceedWithOriginal();
+        });
+      } else {
+        proceedWithOriginal();
+      }
+    }
+
+    function loadPdfDocument(url) {
+      pdfjsLib.getDocument(url).promise.then(function (pdf) {
+        currentPdf = pdf;
+        totalPages = pdf.numPages;
+        document.getElementById('page-count').textContent = totalPages;
+        renderAllPages();
+      }).catch(function (err) {
+        document.getElementById('pdf-content').innerHTML =
+          '<div class="loading">ERROR_LOADING_DATA: ' + err.message + '</div>';
+      });
+    }
+
+    function loadImageGallery(urls) {
+      imageUrls = urls;
+      totalPages = urls.length;
+      document.getElementById('page-count').textContent = totalPages;
+      renderAllPages();
+    }
+
+    function renderAllPages() {
+      var content = document.getElementById('pdf-content');
+      content.innerHTML = '';
+
+      var pagesDiv = document.createElement('div');
+      pagesDiv.className = 'pdf-pages';
+      pagesDiv.id = 'pdf-pages-container';
+
+      if (pageObserver) {
+        pageObserver.disconnect();
+      }
+
+      pageObserver = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            var pageDiv = entry.target;
+            if (!pageDiv.dataset.rendered) {
+              renderPageContent(pageDiv);
+            }
+            // Update current page number based on what's visible
+            if (entry.intersectionRatio > 0.1) {
+              document.getElementById('page-num').textContent = pageDiv.dataset.pageNum;
+            }
+          }
+        });
+      }, { root: document.getElementById('viewer-container'), rootMargin: '3000px 0px', threshold: [0.1] });
+
+      for (var pageNum = 1; pageNum <= totalPages; pageNum++) {
+        createPagePlaceholder(pageNum, pagesDiv);
+      }
+
+      content.appendChild(pagesDiv);
+
+      // Background rendering of all pages sequentially
+      var currentPageToRender = 1;
+      function renderNextPageInBackground() {
+        if (currentPageToRender > totalPages) return;
+        var pageDiv = document.querySelector('.pdf-page[data-page-num="' + currentPageToRender + '"]');
+        if (pageDiv && !pageDiv.dataset.rendered) {
+          renderPageContent(pageDiv).then(function () {
+            currentPageToRender++;
+            setTimeout(renderNextPageInBackground, 100);
+          }).catch(function () {
+            currentPageToRender++;
+            setTimeout(renderNextPageInBackground, 100);
+          });
+        } else {
+          currentPageToRender++;
+          setTimeout(renderNextPageInBackground, 50);
+        }
+      }
+      // Start background rendering after a short delay
+      setTimeout(renderNextPageInBackground, 1000);
+    }
+
+    function createPagePlaceholder(pageNum, container) {
+      var pageDiv = document.createElement('div');
+      pageDiv.className = 'pdf-page';
+      pageDiv.dataset.pageNum = pageNum;
+      pageDiv.dataset.rendered = '';
+      pageDiv.innerHTML = '<div class="loading" style="padding: 40px;">RENDERING_PAGE_' + pageNum + '...</div>';
+
+      pageDiv.style.minHeight = '400px';
+      pageDiv.style.width = zoomLevel === 100 ? '100%' : (document.getElementById('viewer-container').clientWidth * zoomLevel / 100) + 'px';
+
+      container.appendChild(pageDiv);
+      pageObserver.observe(pageDiv);
+    }
+
+    function renderPageContent(pageDiv) {
+      pageDiv.dataset.rendered = 'true';
+      return mediaMode === 'pdf' ? renderPdfPage(pageDiv) : renderImagePage(pageDiv);
+    }
+
+    function renderPdfPage(pageDiv) {
+      var pageNum = parseInt(pageDiv.dataset.pageNum);
+
+      return currentPdf.getPage(pageNum).then(function (page) {
+        // Render at a higher scale for better quality when zoomed in
+        var renderScale = 1.5;
+        var viewport = page.getViewport({ scale: renderScale });
+
+        var canvas = document.createElement('canvas');
+        var context = canvas.getContext('2d');
+
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        pageDiv.style.minHeight = 'auto';
+        pageDiv.style.display = 'block';
+        pageDiv.innerHTML = ''; // Clear loading text
+
+        return page.render({
+          canvasContext: context,
+          viewport: viewport
+        }).promise.then(function () {
+          pageDiv.appendChild(canvas);
+        });
+      });
+    }
+
+    function renderImagePage(pageDiv) {
+      var pageNum = parseInt(pageDiv.dataset.pageNum);
+      var url = imageUrls[pageNum - 1];
+
+      return new Promise(function (resolve, reject) {
+        var img = new Image();
+        // Note: no loading="lazy" here — this image isn't attached to the DOM
+        // until it finishes loading, so lazy-loading would never trigger the
+        // fetch. The IntersectionObserver above already handles lazy rendering.
+        try { img.decoding = 'async'; } catch (e) {}
+        img.alt = 'Page ' + pageNum;
+        img.style.width = '100%';
+
+        img.onload = function () {
+          pageDiv.style.minHeight = 'auto';
+          pageDiv.style.display = 'block';
+          pageDiv.innerHTML = '';
+          pageDiv.appendChild(img);
+          resolve();
+        };
+        img.onerror = function () {
+          pageDiv.innerHTML = '<div class="loading">ERROR_LOADING_IMAGE_' + pageNum + '</div>';
+          reject(new Error('Failed to load image: ' + url));
+        };
+        img.src = url;
+      });
+    }
+
+    function updateZoom() {
+      zoomLevel = parseInt(document.getElementById('zoom-slider').value);
+      document.getElementById('zoom-level').textContent = zoomLevel;
+
+      var containerWidth = document.getElementById('viewer-container').clientWidth - 40; // subtract padding
+      var pages = document.getElementsByClassName('pdf-page');
+      for (var i = 0; i < pages.length; i++) {
+        if (zoomLevel === 100) {
+          pages[i].style.width = '100%';
+        } else {
+          pages[i].style.width = (containerWidth * zoomLevel / 100) + 'px';
+        }
+      }
+    }
+
+    function nextPage() {
+      var container = document.getElementById('viewer-container');
+      container.scrollTop += 500;
+    }
+
+    function previousPage() {
+      var container = document.getElementById('viewer-container');
+      container.scrollTop -= 500;
+    }
+
+    function toggleFullscreen() {
+      var container = document.getElementById('viewer-container');
+      if (!document.fullscreenElement) {
+        container.requestFullscreen().catch(function (err) {
+          alert('Error entering fullscreen: ' + err.message);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    // Load media on page load
+    window.addEventListener('load', function () {
+      loadMedia();
+    });
+  </script>
+</body>
+</html>
