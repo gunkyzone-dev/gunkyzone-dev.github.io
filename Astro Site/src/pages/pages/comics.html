@@ -84,43 +84,51 @@
   };
   firebase.initializeApp(fbConfig);
 
-  const LATEST_TEAR_ISSUE = {
-    title: 'TEAR3',
-    url: '/comics/TEAR3_compressed.pdf',
-    thumbnail: '/thumbnails/TEAR3_THUMB.png',
-    uploadedAt: Date.now()
-  };
+  function comicIssueKey(comic) {
+    const fileName = resolveSiteUrl(comic && comic.url)
+      .split(/[?#]/, 1)[0]
+      .replace(/\/+$/, '')
+      .split('/')
+      .pop() || '';
+    return fileName.replace(/(?:_compressed)?\.pdf$/i, '').toLowerCase();
+  }
 
-  function ensureLatestTearIssue(comics) {
-    const list = Array.isArray(comics) ? [...comics] : [];
-    const hasLatest = list.some(item => resolveSiteUrl(item && item.url).toLowerCase() === LATEST_TEAR_ISSUE.url.toLowerCase());
-    if (!hasLatest) {
-      list.push(LATEST_TEAR_ISSUE);
-    }
-    return list.sort((a, b) => (b.uploadedAt || 0) - (a.uploadedAt || 0));
+  function mergeComics(...groups) {
+    const comicsByIssue = new Map();
+    groups.forEach(group => {
+      if (!Array.isArray(group)) return;
+      group.forEach(comic => {
+        const issueKey = comicIssueKey(comic);
+        if (!issueKey) return;
+        comicsByIssue.set(issueKey, {
+          ...comicsByIssue.get(issueKey),
+          ...comic
+        });
+      });
+    });
+    return [...comicsByIssue.values()].sort((a, b) => (b.uploadedAt || 0) - (a.uploadedAt || 0));
   }
 
   function loadComics() {
-    // First try to load from Firebase, fallback to media.json
-    if (typeof firebase !== 'undefined' && firebase.database) {
-      firebase.database().ref('media_metadata/comics').once('value').then(snap => {
-        const data = snap.val();
-        if (data) {
-          const comics = ensureLatestTearIssue(Object.values(data));
-          renderComics(comics);
-        } else {
-          fetchLocalComics();
-        }
-      }).catch(() => fetchLocalComics());
-    } else {
-      fetchLocalComics();
-    }
-  }
-
-  function fetchLocalComics() {
-    fetch('../data/media.json').then(r => r.json()).then(data => {
-      const comics = ensureLatestTearIssue(data.comics || []);
-      renderComics(comics);
+    fetch('../data/media.json').then(response => {
+      if (!response.ok) throw new Error(`Local comic catalog request failed: ${response.status}`);
+      return response.json();
+    }).then(localData => {
+      const localComics = Array.isArray(localData.comics) ? localData.comics : [];
+      if (typeof firebase !== 'undefined' && firebase.database) {
+        firebase.database().ref('media_metadata/comics').once('value').then(snapshot => {
+          const remoteComics = snapshot.val() ? Object.values(snapshot.val()) : [];
+          renderComics(mergeComics(localComics, remoteComics));
+        }).catch(error => {
+          console.error('Firebase comic metadata read failed:', error);
+          renderComics(mergeComics(localComics));
+        });
+      } else {
+        renderComics(mergeComics(localComics));
+      }
+    }).catch(error => {
+      console.error('Comic catalog load failed:', error);
+      document.getElementById('comic-grid').textContent = 'COMIC_CATALOG_UNAVAILABLE';
     });
   }
 
