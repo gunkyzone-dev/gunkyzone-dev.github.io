@@ -91,7 +91,6 @@
       display: flex; flex-direction: column; gap: 6px;
     }
     #npc-messages-container { display: none; }
-    
     .msg { 
       border-bottom: 1px solid #1a0000; 
       padding-bottom: 4px; 
@@ -110,7 +109,7 @@
     input {
       background: transparent; border: none; color: #fff; 
       padding: 8px; font-family: var(--font-mono); font-size: 18px; outline: none; flex-grow: 1;
-      min-width: 0; /* Prevents input from pushing past flex container */
+      min-width: 0;
     }
     #name-input { width: 88px; flex: 0 0 88px; border-right: 1px solid var(--border); color: var(--accent2); text-align: center; }
     #messages-container::-webkit-scrollbar, #npc-messages-container::-webkit-scrollbar { width: 6px; }
@@ -165,7 +164,7 @@
     }
 
     #back-btn {
-      display: none; /* Hidden by default, shown via JS if not in iframe */
+      display: none;
       position: absolute; top: 10px; left: 10px; z-index: 2100;
       background: var(--bg2); border: 1px solid var(--border); color: var(--accent2);
       padding: 5px 15px; cursor: pointer; font-family: var(--font-mono); font-size: 16px;
@@ -174,7 +173,6 @@
     #back-btn:hover { color: #fff; background: var(--accent2); animation: jitter 0.2s infinite; text-shadow: 2px 0 var(--accent), -2px 0 #00ffff; }
     @keyframes jitter { 0% { transform: translate(2px, -1px); } 50% { transform: translate(-1px, 1px); } }
 
-    /* CRT Curve Effect */
     .crt-mode {
       position: relative;
       border-radius: 20px;
@@ -183,7 +181,7 @@
       transform: perspective(800px) rotateX(1deg);
     }
     .crt-mode .msg {
-      text-shadow: 0 0 3px rgba(255, 255, 255, 0.6), 0 0 8px rgba(255, 0, 0, 0.5); /* Phosphor glow */
+      text-shadow: 0 0 3px rgba(255, 255, 255, 0.6), 0 0 8px rgba(255, 0, 0, 0.5);
     }
     .crt-mode::before {
       content: '';
@@ -200,14 +198,13 @@
       top: 0; left: 0; right: 0; bottom: 0;
       background: 
         radial-gradient(circle at center, transparent 40%, rgba(0,0,0,0.6) 100%),
-        linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%); /* Vignette + Scanlines */
+        linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
       background-size: 100% 100%, 100% 4px;
       pointer-events: none;
       z-index: 10;
       border-radius: 20px;
     }
     
-    /* Chromatic Aberration Glitch */
     .chromatic-glitch {
       animation: chromatic 0.08s infinite linear;
       display: inline-block;
@@ -592,12 +589,9 @@
     }
   });
 
-  // Check if we are in an iframe via query param
   const urlParams = new URLSearchParams(window.location.search);
   if (!urlParams.has('iframe')) {
-    // Not in an iframe, show the back button
     document.getElementById('back-btn').style.display = 'inline-block';
-    // Add some top padding to the chat container so it doesn't overlap the button
     document.getElementById('chat-container').style.paddingTop = '40px';
   }
 
@@ -709,7 +703,6 @@
     }
   }
 
-  // --- NPC CHAT LOGIC ---
   const npcContainer = document.getElementById('npc-messages-container');
   const npcWelcomeMessage = npcContainer.querySelector('.msg');
   if (npcWelcomeMessage) {
@@ -758,7 +751,6 @@
       overlay.innerHTML = '<div>ERR_NO_CHAT_FOUND</div><div style="font-size: 16px; margin-top: 10px;">CHANNEL DOES NOT EXIST OR HAS BEEN PURGED.</div>';
       document.body.appendChild(overlay);
       
-      // Add a quick screen shake effect to the body
       const originalTransform = document.body.style.transform;
       document.body.style.transform = 'translate(2px, 2px)';
       setTimeout(() => document.body.style.transform = 'translate(-2px, -2px)', 50);
@@ -783,7 +775,6 @@
     document.getElementById('chat-title').textContent = 'PRIVATE_COMM_LINK';
     document.getElementById('chat-status').innerHTML = 'USERS_ONLINE: <span style="color:red; animation: glitchText 0.2s infinite;">JUST_YOU</span>';
     
-    // Visual shift
     document.body.style.boxShadow = "inset 0 0 50px rgba(255,0,0,0.15)";
     document.getElementById('chat-app').style.filter = "contrast(1.2) brightness(0.9)";
     document.getElementById('chat-container').classList.add('crt-mode');
@@ -803,13 +794,11 @@
     msgContainer.style.display = 'flex';
     document.getElementById('chat-title').textContent = 'GLOBAL_COMMS';
     
-    // Update presence count immediately when switching back
     presenceRef.once('value').then((snapshot) => {
       const count = snapshot.numChildren();
       document.getElementById('chat-status').innerHTML = `SYS_STATUS: ONLINE | USERS: ${count}`;
     });
     
-    // Remove visual shift
     document.body.style.boxShadow = "none";
     document.getElementById('chat-app').style.filter = "none";
     document.getElementById('chat-container').classList.remove('crt-mode');
@@ -831,7 +820,6 @@
     const targetMsg = forcedMessages[npcStep];
     if (forcedProgress > 0 && forcedProgress < targetMsg.length) {
       ghostTimer = setTimeout(() => {
-        // Ghost takes over
         ghostInterval = setInterval(() => {
           if (forcedProgress < targetMsg.length) {
             forcedProgress++;
@@ -855,7 +843,6 @@
     forcedProgress = 0;
     isNpcTyping = true;
     
-    // Show NPC typing indicator
     const typingIndicator = document.createElement('div');
     typingIndicator.className = 'msg';
     typingIndicator.id = 'npc-typing';
@@ -863,7 +850,6 @@
     npcContainer.appendChild(typingIndicator);
     npcContainer.scrollTop = npcContainer.scrollHeight;
     
-    // If it's the final message, type it out slowly and then glitch out
     if (npcStep === npcResponses.length - 1) {
       setTimeout(() => {
         const ind = document.getElementById('npc-typing');
@@ -885,24 +871,21 @@
             charIndex++;
             npcContainer.scrollTop = npcContainer.scrollHeight;
             
-            // Glitch out right before the end (at the 'G' in 'GAME')
             if (charIndex === finalText.length - 3) {
               clearInterval(slowTypeInterval);
               document.getElementById('final-npc-text').classList.add('chromatic-glitch');
               
-              // Let the text glitch for a moment before terminating
               setTimeout(() => {
                 triggerTermination();
               }, 1500);
             }
           }
-        }, 200); // Slow typing speed
+        }, 200);
         
       }, 3000);
       return;
     }
 
-    // Normal response logic
     setTimeout(() => {
       const ind = document.getElementById('npc-typing');
       if (ind) npcContainer.removeChild(ind);
@@ -934,13 +917,10 @@
     overlay.innerHTML = 'LIVE FEED TERMINATED';
     document.body.appendChild(overlay);
     
-    // Optional: redirect back to index after a few seconds
     setTimeout(() => {
       if (window.self !== window.top) {
-        // We are in an iframe, just reload the chat
         window.location.reload();
       } else {
-        // We are on the standalone chat page, go back to index
         window.location.href = '../index.html';
       }
     }, 4000);
@@ -970,7 +950,6 @@
       return;
     }
     
-    // NPC Channel Logic
     if (e.key === 'Enter') {
       e.preventDefault();
       if (npcStep < forcedMessages.length && forcedProgress === forcedMessages[npcStep].length) {
@@ -979,21 +958,18 @@
       return;
     }
     
-    // Ignore control keys
     if (e.key.length > 1 && e.key !== 'Backspace') return;
     
-    e.preventDefault(); // Stop normal typing
+    e.preventDefault();
     
     if (isNpcTyping || npcStep >= forcedMessages.length) return;
     
     const targetMsg = forcedMessages[npcStep];
     
     if (e.key === 'Backspace') {
-      // Don't allow backspace
       return;
     }
     
-    // Type 3 characters per keystroke to make it feel faster and more frantic
     forcedProgress += 3;
     if (forcedProgress > targetMsg.length) forcedProgress = targetMsg.length;
     chatInput.value = targetMsg.substring(0, forcedProgress);

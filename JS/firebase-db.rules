@@ -78,7 +78,7 @@
       ".read": true,
       ".indexOn": ["ts"],
       "$entryId": {
-        ".write": "auth != null && !data.exists() && newData.child('uid').val() === auth.uid",
+        ".write": "auth != null && $entryId === auth.uid && !data.exists() && newData.child('uid').val() === auth.uid",
         ".validate": "newData.hasChildren(['uid', 'name', 'msg', 'ts'])",
         "uid": {
           ".validate": "newData.isString() && newData.val() === auth.uid"

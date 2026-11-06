@@ -53,15 +53,13 @@
     @keyframes jitter { 0% { transform: translate(2px, -1px); } 50% { transform: translate(-1px, 1px); } }
     .welcome-box { border: 1px solid var(--border); padding: 20px; background: var(--bg2); margin: 30px 0; min-height: 60px; }
     .section-label { color: var(--accent2); font-size: 14px; margin: 40px 0 10px; border-bottom: 1px solid var(--border); }
-    
-    /* Drawings Grid */
+
     .drawing-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
     .drawing-item { border: 1px solid var(--border); background: #050000; padding: 10px; cursor: pointer; display: flex; gap: 10px; align-items: center; transition: 0.2s; }
     .drawing-item:hover { border-color: var(--accent); background: #1a0000; }
     .drawing-thumb { width: 60px; height: 60px; background: #000; border: 1px solid #222; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .drawing-thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
 
-    /* Compact Comics List */
     .compact-list { display: flex; flex-direction: column; gap: 8px; }
     .compact-item { border: 1px solid var(--border); background: #050000; padding: 8px 12px; cursor: pointer; display: flex; gap: 15px; align-items: center; transition: 0.2s; }
     .compact-item:hover { border-color: var(--accent); background: #1a0000; }
@@ -69,19 +67,19 @@
     .compact-thumb img { width: 100%; height: 100%; object-fit: cover; }
     .compact-info { display: flex; justify-content: space-between; width: 100%; align-items: center; }
 
-    /* NEW badge */
     .new-badge { display: inline-block; background: var(--accent); color: #fff; font-size: 11px; padding: 0 5px; margin-left: 6px; vertical-align: middle; }
     .new-badge-flash { animation: blink 1s step-end infinite; }
-    /* Visit counter */
     #visit-count { font-size: 14px; color: var(--dim); letter-spacing: 1px; }
-    /* Transmission of the day */
     .transmission-box { border: 1px solid var(--accent2); padding: 12px 20px; background: #050000; margin: 15px 0 30px 0; color: var(--accent); font-size: 17px; }
     .transmission-box::before { content: '// TRANSMISSION_OF_THE_DAY'; display: block; font-size: 12px; color: var(--accent2); margin-bottom: 6px; }
-    /* Guestbook */
     .guestbook-form { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
     .guestbook-form input, .guestbook-form textarea { background: #000; border: 1px solid var(--border); color: #fff; padding: 8px 10px; font-family: var(--font-mono); font-size: 17px; resize: vertical; }
     .guestbook-form button { background: var(--accent2); color: #fff; border: none; padding: 8px 20px; font-family: var(--font-mono); font-size: 17px; cursor: pointer; text-transform: uppercase; }
     .guestbook-form button:hover { background: var(--accent); }
+    .guestbook-form[hidden] { display: none; }
+    .guestbook-note, .guestbook-status { margin: -10px 0 14px; font-size: 13px; }
+    .guestbook-note { color: var(--dim); }
+    .guestbook-status { color: var(--accent); }
     .guestbook-entry { border-bottom: 1px solid #1a0000; padding: 10px 0; }
     .guestbook-entry .gb-name { color: var(--accent); font-size: 15px; }
     .guestbook-entry .gb-msg { color: var(--text); font-size: 17px; margin-top: 2px; word-break: break-word; }
@@ -153,6 +151,7 @@
       gap: 12px; margin-bottom: 10px; padding: 14px 16px;
       border: 1px solid var(--accent2); background: var(--bg2);
     }
+    .chat-entry-prompt[hidden] { display: none; }
     .chat-entry-copy strong { display: block; color: var(--accent); font-size: 20px; }
     .chat-entry-copy span { color: var(--dim); font-size: 15px; }
     .chat-entry-link {
@@ -207,6 +206,7 @@
       <a href="index.html">HOME</a>
       <a href="pages/comics.html">COMICS</a>
       <a href="pages/drawings.html">DRAWINGS</a>
+      <a href="pages/games.html">GAMES</a>
       <a href="pages/chat-github.html">CHAT: SIGN_IN / REGISTER</a>
     </nav>
   </header>
@@ -222,7 +222,7 @@
     <div id="recent-entries" class="recent-grid">LOADING_DATA...</div>
 
     <div class="section-label">> LIVE_COMMS</div>
-    <div class="chat-entry-prompt" role="region" aria-label="Chat sign-in">
+    <div id="chat-entry-prompt" class="chat-entry-prompt" role="region" aria-label="Chat sign-in">
       <div class="chat-entry-copy">
         <strong>JOIN_LIVE_COMMS</strong>
         <span>SIGN IN OR REGISTER WITH EMAIL/PASSWORD OR GOOGLE TO JOIN THE CONVERSATION.</span>
@@ -235,11 +235,13 @@
 
     <div class="section-label">> GUESTBOOK</div>
     <div style="border: 1px solid var(--border); background: var(--bg2); padding: 20px;">
-      <div class="guestbook-form">
+      <div class="guestbook-form" id="guestbook-form">
         <input type="text" id="gb-name" placeholder="CALLSIGN_HERE" maxlength="30">
         <textarea id="gb-msg" placeholder="LEAVE_A_TRANSMISSION..." maxlength="300" rows="3"></textarea>
         <button onclick="submitGuestbook()">[ TRANSMIT ]</button>
       </div>
+      <p class="guestbook-note">You only get ONE, make it count!</p>
+      <p id="guestbook-status" class="guestbook-status" role="status" aria-live="polite" hidden></p>
       <div id="guestbook-entries">LOADING_LOGS...</div>
     </div>
 
@@ -269,6 +271,34 @@
   };
 
   firebase.initializeApp(fbConfig);
+  function showGuestbookSubmitted() {
+    const form = document.getElementById('guestbook-form');
+    const status = document.getElementById('guestbook-status');
+    if (form) form.hidden = true;
+    if (status) {
+      status.textContent = 'YOUR ONE ENTRY IS IN THE LOG.';
+      status.hidden = false;
+    }
+  }
+
+  const chatEntryPrompt = document.getElementById('chat-entry-prompt');
+  const auth = firebase.auth();
+  auth.onAuthStateChanged((user) => {
+    if (chatEntryPrompt) chatEntryPrompt.hidden = Boolean(user && !user.isAnonymous);
+    if (!user) return;
+    firebase.database().ref('guestbook').child(user.uid).once('value')
+      .then((snapshot) => {
+        if (snapshot.exists() && auth.currentUser && auth.currentUser.uid === user.uid) {
+          showGuestbookSubmitted();
+        }
+      })
+      .catch((error) => {
+        console.error('Guestbook submission state read failed:', error);
+      });
+  }, (error) => {
+    console.error('Homepage authentication state listener failed:', error);
+  });
+
   let firebaseUserPromise;
   function ensureFirebaseUser() {
     if (firebaseUserPromise) return firebaseUserPromise;
@@ -363,7 +393,6 @@
     
     let msgIndex = 0;
     
-    // Helper to get random time
     const randomTime = () => Math.floor(Math.random() * (maxPause - minPause + 1) + minPause);
     
     setTimeout(() => {
@@ -379,7 +408,6 @@
             i++;
           } else {
             clearInterval(typeTimer);
-            // Wait a random amount of time before erasing
             setTimeout(eraseCurrent, randomTime());
           }
         }, typeSpeed);
@@ -395,9 +423,7 @@
             i--;
           } else {
             clearInterval(eraseTimer);
-            // Move to next message (loop around)
             msgIndex = (msgIndex + 1) % messages.length;
-            // Short random pause before typing next
             setTimeout(typeNext, Math.random() * 1000 + 200);
           }
         }, eraseSpeed);
@@ -408,9 +434,7 @@
   }
 
   window.onload = () => {
-    // Force scroll to top on load
     window.scrollTo(0, 0);
-    // Also try scrolling after a tiny delay in case the iframe or dynamic content pushes it down
     setTimeout(() => window.scrollTo(0, 0), 50);
 
     const presenceRef = firebase.database().ref('presence');
@@ -537,7 +561,6 @@
       "Ooh ooh ooh."
     ];
 
-    // Shuffle the messages array so it's different every time
     function shuffleArray(array) {
       for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -552,14 +575,13 @@
           const fbText = snap.val();
           if (fbText) {
             typeWriter("type-subtitle", `MOOD: ${fbText.mood || 'STABLE'}`, 30, 1000);
-            
-            // If they set a custom welcome message, use it as the first message in the rotation
+
             let messages = shuffleArray([...defaultMessages]);
             if (fbText.working_on && fbText.working_on !== "System ready.") {
               messages.unshift(fbText.working_on);
             }
-            
-            // Type out GUNKY, then ZONE, then start the welcome box
+
+
             typeWriter("type-gunky", "GUNKY", 100, 500, () => {
               typeWriter("type-zone", "ZONE", 100, 0, () => {
                 document.getElementById('title-cursor').style.display = 'none';
@@ -627,7 +649,6 @@
       }
     }).catch(e => {
       console.error("data.json fetch error:", e);
-      // Fallback if data.json fails entirely
       typeWriter("type-subtitle", `MOOD: STABLE`, 30, 1000);
       
       typeWriter("type-gunky", "GUNKY", 100, 500, () => {
@@ -646,7 +667,6 @@
     });
 
     fetch('data/media.json').then(r => r.json()).then(localData => {
-      // Try to fetch from Firebase first
       if (typeof firebase !== 'undefined' && firebase.database) {
         firebase.database().ref('media_metadata').once('value').then(snap => {
           const fbData = snap.val();
@@ -746,7 +766,6 @@
     }
   };
 
-  // === VISIT COUNTER ===
   firebaseUserReady.then((user) => {
     if (!user) return;
     return firebase.database().ref('visit_count').transaction(c => (c || 0) + 1)
@@ -759,7 +778,6 @@
     console.error('Visit count read failed:', error);
   });
 
-  // Add original daily messages here; one is selected per day.
   const transmissions = [
     "A rudimentary implant.",
     "Another daily message.",
@@ -776,7 +794,6 @@
     txEl.textContent = transmissions[dayIdx];
   }
 
-  // === GUESTBOOK ===
   firebase.database().ref('guestbook').orderByChild('ts').limitToLast(15).on('value', snap => {
     const container = document.getElementById('guestbook-entries');
     if (!container) return;
@@ -797,15 +814,29 @@
     const name = (document.getElementById('gb-name').value.trim() || 'ANONYMOUS').slice(0, 30);
     const msg  = document.getElementById('gb-msg').value.trim().slice(0, 300);
     if (!msg) return;
+    const submitButton = document.querySelector('#guestbook-form button');
+    if (!submitButton || submitButton.disabled) return;
+    submitButton.disabled = true;
     try {
-      const user = await firebaseUserReady;
+      await firebaseUserReady;
+      const user = auth.currentUser;
       if (!user) throw new Error('Anonymous sign-in is unavailable.');
-      await firebase.database().ref('guestbook').push({ uid: user.uid, name, msg, ts: Date.now() });
+      const result = await firebase.database().ref('guestbook').child(user.uid).transaction((entry) => {
+        if (entry !== null) return;
+        return { uid: user.uid, name, msg, ts: Date.now() };
+      });
+      if (!result.committed) {
+        showGuestbookSubmitted();
+        return;
+      }
       document.getElementById('gb-name').value = '';
       document.getElementById('gb-msg').value = '';
+      showGuestbookSubmitted();
     } catch (error) {
       console.error('Guestbook submission failed:', error);
       alert('GUESTBOOK_SUBMISSION_FAILED');
+    } finally {
+      submitButton.disabled = false;
     }
   };
 </script>

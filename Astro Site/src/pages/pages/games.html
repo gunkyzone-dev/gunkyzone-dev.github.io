@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GunkyZone — Games</title>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    :root { color-scheme: dark; --bg: #020202; --panel: #080505; --border: #2a0000; --dim: #6b0f12; --text: #d4c0c0; --accent: #ff0000; --accent2: #9b0000; --font-mono: 'VT323', monospace; }
+    body { margin: 0; min-height: 100vh; padding: clamp(12px, 3vw, 28px); background: var(--bg); color: var(--text); font-family: var(--font-mono); font-size: 20px; }
+    .site-wrapper { width: min(100%, 1120px); margin: 0 auto; }
+    .site-header { border-bottom: 1px solid var(--border); padding-bottom: 14px; margin-bottom: 24px; }
+    .site-title { margin: 0 0 12px; color: var(--accent); font-size: clamp(32px, 7vw, 54px); }
+    nav { display: flex; flex-wrap: wrap; gap: 8px; }
+    nav a { padding: 5px 12px; border: 1px solid var(--border); color: var(--dim); text-decoration: none; }
+    nav a:hover, nav a[aria-current="page"] { color: #fff; background: var(--accent2); }
+    .section-label { margin: 0 0 10px; color: var(--accent2); border-bottom: 1px solid var(--border); }
+    .game-panel { border: 1px solid var(--border); background: var(--panel); padding: 10px; }
+    .game-title { margin: 0 0 8px; color: var(--accent); font-size: 26px; }
+    iframe { display: block; width: 100%; height: clamp(360px, 65vh, 560px); border: 1px solid var(--border); background: #000; }
+    @media (max-width: 560px) { .game-panel { padding: 6px; } iframe { height: 420px; } }
+  </style>
+</head>
+<body>
+  <main class="site-wrapper">
+    <header class="site-header">
+      <h1 class="site-title">> GAMES</h1>
+      <nav aria-label="Main navigation">
+        <a href="../index.html">HOME</a>
+        <a href="comics.html">COMICS</a>
+        <a href="drawings.html">DRAWINGS</a>
+        <a href="games.html" aria-current="page">GAMES</a>
+        <a href="chat-github.html">CHAT</a>
+      </nav>
+    </header>
+    <section aria-labelledby="run-title">
+      <h2 class="section-label">> GAME_ARCHIVE</h2>
+      <div class="game-panel">
+        <h3 class="game-title" id="run-title">RUN.EXE</h3>
+        <iframe src="RUN_WIP.html" title="RUN.EXE endless runner"></iframe>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
