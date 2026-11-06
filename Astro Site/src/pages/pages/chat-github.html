@@ -24,14 +24,59 @@
       animation: terminalOn 0.4s ease-out forwards;
     }
     @keyframes terminalOn {
-      0% { opacity: 0; transform: scaleY(0.95) scaleX(0.95); filter: brightness(3) contrast(2); }
-      20% { opacity: 1; transform: scaleY(1.02) scaleX(1.02); filter: brightness(1.5) contrast(1.5); }
-      40% { opacity: 0.8; transform: scaleY(0.98) scaleX(0.98); filter: brightness(1.2); }
-      60% { opacity: 1; transform: scaleY(1.01) scaleX(1.01); filter: brightness(1.1); }
-      80% { opacity: 0.9; transform: scaleY(0.99) scaleX(0.99); filter: brightness(1.05); }
-      100% { opacity: 1; transform: none; filter: none; }
+      0% { opacity: 0; }
+      20% { opacity: 1; }
+      40% { opacity: 0.8; }
+      60% { opacity: 1; }
+      80% { opacity: 0.9; }
+      100% { opacity: 1; }
     }
-    #chat-app { display: flex; height: 95vh; gap: 10px; }
+    #chat-app { display: none; height: 95vh; gap: 10px; }
+    #auth-screen {
+      position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center;
+      justify-content: center; padding: 18px; overflow-y: auto; background: rgba(2, 2, 2, 0.96);
+    }
+    #auth-panel {
+      width: min(440px, 100%); border: 2px solid var(--accent); background: #000;
+      box-shadow: 0 0 28px rgba(255, 0, 0, 0.16); padding: 20px;
+    }
+    #auth-panel h1 { color: #fff; font-size: 28px; letter-spacing: 2px; margin: 4px 0 6px; }
+    #auth-panel p { color: var(--text); }
+    #auth-kicker { color: var(--accent); font-size: 16px; }
+    #auth-form { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+    .auth-field { display: flex; flex-direction: column; gap: 2px; color: var(--accent2); }
+    .auth-field input {
+      width: 100%; border: 1px solid var(--border); background: var(--bg2); color: #fff;
+      font: inherit; padding: 6px;
+    }
+    .auth-button {
+      border: 1px solid var(--accent2); background: var(--accent2); color: #fff;
+      cursor: pointer; font: inherit; padding: 6px 12px;
+    }
+    .auth-button:hover:not(:disabled) { background: var(--accent); }
+    .auth-button:disabled { cursor: wait; opacity: 0.6; }
+    #google-auth-btn { width: 100%; margin-top: 8px; background: #080505; }
+    #auth-actions { display: flex; justify-content: space-between; gap: 10px; margin-top: 8px; }
+    #auth-actions button {
+      border: 0; background: transparent; color: var(--text); cursor: pointer;
+      font: inherit; text-decoration: underline;
+    }
+    #auth-actions button:hover { color: #fff; }
+    #auth-message { min-height: 1.2em; margin-top: 8px; color: #ff7777; }
+    #auth-message.success { color: #a0d8a0; }
+    #chat-session { display: flex; align-items: center; gap: 8px; }
+    #chat-account { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #sign-out-btn {
+      border: 1px solid var(--border); background: #000; color: var(--accent);
+      cursor: pointer; font: inherit; padding: 3px 8px;
+    }
+    #sign-out-btn:hover { background: var(--accent2); color: #fff; }
+    @media (max-width: 520px) {
+      #auth-panel { padding: 16px; }
+      #chat-header { flex-wrap: wrap; gap: 6px; }
+      #chat-account { max-width: 130px; }
+      #auth-actions { flex-direction: column; align-items: flex-start; }
+    }
     #sidebar { width: 150px; border: 1px solid var(--border); background: #000; display: flex; flex-direction: column; }
     .channel { padding: 10px; cursor: pointer; border-bottom: 1px solid var(--border); color: var(--dim); transition: 0.2s; }
     .channel:hover { background: var(--bg2); color: var(--text); }
@@ -108,7 +153,7 @@
 
     #back-btn {
       display: none; /* Hidden by default, shown via JS if not in iframe */
-      position: absolute; top: 10px; left: 10px; z-index: 100;
+      position: absolute; top: 10px; left: 10px; z-index: 2100;
       background: var(--bg2); border: 1px solid var(--border); color: var(--accent2);
       padding: 5px 15px; cursor: pointer; font-family: var(--font-mono); font-size: 16px;
       text-decoration: none; text-transform: uppercase;
@@ -168,6 +213,29 @@
 
 <a href="../index.html" id="back-btn">< RETURN</a>
 
+<main id="auth-screen">
+  <section id="auth-panel" aria-labelledby="auth-title">
+    <p id="auth-kicker">GUNKYZONE // IDENTITY_GATE</p>
+    <h1 id="auth-title">LIVE_COMMS</h1>
+    <p id="auth-subtitle">SIGN IN OR REGISTER TO ACCESS GLOBAL_COMMS.</p>
+    <form id="auth-form">
+      <label class="auth-field" for="auth-email">EMAIL
+        <input id="auth-email" type="email" autocomplete="email" required>
+      </label>
+      <label class="auth-field" for="auth-password">PASSWORD
+        <input id="auth-password" type="password" autocomplete="current-password" minlength="6" required>
+      </label>
+      <button class="auth-button" id="auth-submit" type="submit">SIGN_IN</button>
+    </form>
+    <button class="auth-button" id="google-auth-btn" type="button">CONTINUE_WITH_GOOGLE</button>
+    <div id="auth-actions">
+      <button id="auth-mode-toggle" type="button">NEED AN ACCOUNT? REGISTER</button>
+      <button id="password-reset-btn" type="button">RESET PASSWORD</button>
+    </div>
+    <p id="auth-message" role="alert" aria-live="polite"></p>
+  </section>
+</main>
+
 <div id="chat-app">
   <div id="sidebar">
     <div class="channel active" id="chan-global" onclick="switchToGlobal()"># GLOBAL_COMMS</div>
@@ -178,6 +246,10 @@
     <div id="chat-header">
       <span id="chat-title">GLOBAL_COMMS</span>
       <span id="chat-status">SYS_STATUS: ONLINE</span>
+      <div id="chat-session">
+        <span id="chat-account"></span>
+        <button id="sign-out-btn" type="button">SIGN_OUT</button>
+      </div>
     </div>
 
     <div id="messages-container">
@@ -189,7 +261,7 @@
     </div>
 
     <div class="input-wrap">
-      <input type="text" id="name-input" placeholder="ANON" maxlength="10">
+      <input type="text" id="name-input" placeholder="USER" maxlength="10">
       <input type="text" id="chat-input" placeholder="ENTER MESSAGE..." autocomplete="off">
       <button id="settings-btn">⚙</button>
     </div>
@@ -234,60 +306,244 @@
   const msgContainer = document.getElementById('messages-container');
   const chatInput = document.getElementById('chat-input');
   const nameInput = document.getElementById('name-input');
+  const auth = firebase.auth();
+  const authScreen = document.getElementById('auth-screen');
+  const chatApp = document.getElementById('chat-app');
+  const authForm = document.getElementById('auth-form');
+  const authEmail = document.getElementById('auth-email');
+  const authPassword = document.getElementById('auth-password');
+  const authSubmit = document.getElementById('auth-submit');
+  const googleAuthButton = document.getElementById('google-auth-btn');
+  const authModeToggle = document.getElementById('auth-mode-toggle');
+  const passwordResetButton = document.getElementById('password-reset-btn');
+  const authMessage = document.getElementById('auth-message');
+  const connectedRef = firebase.database().ref('.info/connected');
   chatInput.maxLength = 500;
 
-  let firebaseUserPromise;
-  function ensureFirebaseUser() {
-    if (firebaseUserPromise) return firebaseUserPromise;
-    const auth = firebase.auth();
-    if (auth.currentUser) {
-      firebaseUserPromise = Promise.resolve(auth.currentUser);
-      return firebaseUserPromise;
-    }
+  let authMode = 'login';
+  let activeUser = null;
+  let activeConnectionRef = null;
+  let chatQuery = null;
+  let chatMessagesHandler = null;
+  let presenceHandler = null;
+  let connectedHandler = null;
+  let currentChannel = 'global';
 
-    firebaseUserPromise = new Promise((resolve, reject) => {
-      let unsubscribe = () => {};
-      unsubscribe = auth.onAuthStateChanged((user) => {
-        unsubscribe();
-        if (user) {
-          resolve(user);
-          return;
-        }
-        auth.signInAnonymously().then((credential) => resolve(credential.user)).catch(reject);
-      }, (error) => {
-        unsubscribe();
-        reject(error);
-      });
-    });
-    return firebaseUserPromise;
+  function setAuthMessage(message, success = false) {
+    authMessage.textContent = message;
+    authMessage.classList.toggle('success', success);
   }
 
-  const firebaseUserReady = ensureFirebaseUser().then((user) => {
-    const connectionRef = presenceRef.child(user.uid).push();
-    firebase.database().ref('.info/connected').on('value', (snapshot) => {
-      if (snapshot.val()) {
-        connectionRef.onDisconnect().remove()
-          .then(() => connectionRef.set(true))
-          .catch((error) => console.error('Presence registration failed:', error));
+  function authErrorMessage(error) {
+    const messages = {
+      'auth/email-already-in-use': 'ACCOUNT_EXISTS. SWITCH_TO_SIGN_IN.',
+      'auth/invalid-email': 'EMAIL_ADDRESS_INVALID.',
+      'auth/weak-password': 'PASSWORD_TOO_WEAK. USE_AT_LEAST_6_CHARACTERS.',
+      'auth/invalid-credential': 'EMAIL_OR_PASSWORD_INCORRECT.',
+      'auth/user-not-found': 'EMAIL_OR_PASSWORD_INCORRECT.',
+      'auth/wrong-password': 'EMAIL_OR_PASSWORD_INCORRECT.',
+      'auth/too-many-requests': 'TOO_MANY_ATTEMPTS. TRY_AGAIN_LATER.',
+      'auth/unauthorized-domain': 'THIS_WEBSITE_DOMAIN_IS_NOT_AUTHORIZED_IN_FIREBASE.',
+      'auth/operation-not-allowed': 'THIS_SIGN_IN_METHOD_IS_DISABLED_IN_FIREBASE.',
+      'auth/popup-blocked': 'GOOGLE_SIGN_IN_POPUP_WAS_BLOCKED.',
+      'auth/popup-closed-by-user': 'GOOGLE_SIGN_IN_CANCELLED.',
+      'auth/network-request-failed': 'NETWORK_ERROR. CHECK_YOUR_CONNECTION.'
+    };
+    return messages[error.code] || 'AUTHENTICATION_FAILED. CHECK_THE_DETAILS_AND_TRY_AGAIN.';
+  }
+
+  function setAuthMode(mode) {
+    authMode = mode;
+    const registering = mode === 'register';
+    document.getElementById('auth-title').textContent = registering ? 'CREATE_ACCOUNT' : 'LIVE_COMMS';
+    document.getElementById('auth-subtitle').textContent = registering
+      ? 'REGISTER TO ACCESS GLOBAL_COMMS.'
+      : 'SIGN IN OR REGISTER TO ACCESS GLOBAL_COMMS.';
+    authSubmit.textContent = registering ? 'REGISTER' : 'SIGN_IN';
+    authPassword.autocomplete = registering ? 'new-password' : 'current-password';
+    authModeToggle.textContent = registering ? 'ALREADY REGISTERED? SIGN IN' : 'NEED AN ACCOUNT? REGISTER';
+    passwordResetButton.hidden = registering;
+    setAuthMessage('');
+  }
+
+  function stopChatListeners() {
+    if (chatQuery && chatMessagesHandler) chatQuery.off('value', chatMessagesHandler);
+    if (presenceHandler) presenceRef.off('value', presenceHandler);
+    if (connectedHandler) connectedRef.off('value', connectedHandler);
+    chatQuery = null;
+    chatMessagesHandler = null;
+    presenceHandler = null;
+    connectedHandler = null;
+    activeConnectionRef = null;
+  }
+
+  function renderChatMessages(snapshot) {
+    msgContainer.replaceChildren();
+    snapshot.forEach((child) => {
+      const data = child.val();
+      const div = document.createElement('div');
+      div.className = 'msg';
+
+      const authorSpan = document.createElement('span');
+      authorSpan.className = 'msg-author';
+      authorSpan.textContent = (data.author || 'USER') + ':';
+      authorSpan.style.color = /^#[0-9a-f]{6}$/i.test(data.color) ? data.color : '#ff0000';
+
+      const textSpan = document.createElement('span');
+      textSpan.textContent = data.text || '';
+      if (data.style === 'bold') textSpan.style.fontWeight = 'bold';
+      if (data.style === 'italic') textSpan.style.fontStyle = 'italic';
+
+      div.appendChild(authorSpan);
+      div.appendChild(textSpan);
+      msgContainer.appendChild(div);
+    });
+    msgContainer.scrollTop = msgContainer.scrollHeight;
+  }
+
+  function attachChatListeners(user) {
+    chatQuery = db.limitToLast(50);
+    chatMessagesHandler = renderChatMessages;
+    chatQuery.on('value', chatMessagesHandler, (error) => {
+      console.error('Chat history read failed:', error);
+      document.getElementById('chat-status').textContent = 'SYS_STATUS: CHAT_UNAVAILABLE';
+    });
+
+    presenceHandler = (snapshot) => {
+      if (currentChannel === 'global') {
+        document.getElementById('chat-status').textContent =
+          `SYS_STATUS: ONLINE | USERS: ${snapshot.numChildren()}`;
       }
-    }, (error) => {
+    };
+    presenceRef.on('value', presenceHandler, (error) => {
+      console.error('Presence read failed:', error);
+      document.getElementById('chat-status').textContent = 'SYS_STATUS: PRESENCE_UNAVAILABLE';
+    });
+
+    const connectionRef = presenceRef.child(user.uid).push();
+    activeConnectionRef = connectionRef;
+    connectedHandler = (snapshot) => {
+      if (!snapshot.val()) return;
+      connectionRef.onDisconnect().remove()
+        .then(() => connectionRef.set(true))
+        .catch((error) => {
+          console.error('Presence registration failed:', error);
+          document.getElementById('chat-status').textContent = 'SYS_STATUS: PRESENCE_UNAVAILABLE';
+        });
+    };
+    connectedRef.on('value', connectedHandler, (error) => {
       console.error('Connection status listener failed:', error);
     });
-    return user;
-  }).catch((error) => {
-    console.error('Firebase anonymous sign-in failed:', error);
-    document.getElementById('chat-status').textContent = 'SYS_STATUS: AUTHENTICATION_REQUIRED';
-    return null;
+  }
+
+  auth.onAuthStateChanged((user) => {
+    if (user && user.isAnonymous) {
+      stopChatListeners();
+      activeUser = null;
+      authScreen.style.display = 'flex';
+      chatApp.style.display = 'none';
+      setAuthMessage('ANONYMOUS_ACCOUNTS_CANNOT_ACCESS_CHAT. SIGN_IN_OR_REGISTER.');
+      return;
+    }
+
+    if (!user) {
+      stopChatListeners();
+      activeUser = null;
+      authScreen.style.display = 'flex';
+      chatApp.style.display = 'none';
+      return;
+    }
+
+    if (activeUser && activeUser.uid === user.uid) return;
+    stopChatListeners();
+    activeUser = user;
+    authScreen.style.display = 'none';
+    chatApp.style.display = 'flex';
+    document.getElementById('chat-account').textContent = user.email || user.displayName || 'SIGNED_IN';
+    setAuthMessage('');
+    attachChatListeners(user);
+  }, (error) => {
+    console.error('Authentication state listener failed:', error);
+    setAuthMessage(authErrorMessage(error));
   });
 
-  presenceRef.on('value', (snapshot) => {
-    if (currentChannel === 'global') {
-      const count = snapshot.numChildren();
-      document.getElementById('chat-status').innerHTML = `SYS_STATUS: ONLINE | USERS: ${count}`;
+  authForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    authSubmit.disabled = true;
+    googleAuthButton.disabled = true;
+    authModeToggle.disabled = true;
+    passwordResetButton.disabled = true;
+    setAuthMessage(authMode === 'register' ? 'CREATING_ACCOUNT...' : 'AUTHENTICATING...', true);
+    try {
+      const email = authEmail.value.trim();
+      if (authMode === 'register') {
+        await auth.createUserWithEmailAndPassword(email, authPassword.value);
+      } else {
+        await auth.signInWithEmailAndPassword(email, authPassword.value);
+      }
+      authPassword.value = '';
+    } catch (error) {
+      console.error('Email authentication failed:', error);
+      setAuthMessage(authErrorMessage(error));
+    } finally {
+      authSubmit.disabled = false;
+      googleAuthButton.disabled = false;
+      authModeToggle.disabled = false;
+      passwordResetButton.disabled = false;
     }
-  }, (error) => {
-    console.error('Presence read failed:', error);
-    document.getElementById('chat-status').textContent = 'SYS_STATUS: PRESENCE_UNAVAILABLE';
+  });
+
+  googleAuthButton.addEventListener('click', async () => {
+    googleAuthButton.disabled = true;
+    setAuthMessage('CONNECTING_TO_GOOGLE...', true);
+    try {
+      await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+    } catch (error) {
+      console.error('Google authentication failed:', error);
+      setAuthMessage(authErrorMessage(error));
+    } finally {
+      googleAuthButton.disabled = false;
+    }
+  });
+
+  authModeToggle.addEventListener('click', () => {
+    setAuthMode(authMode === 'login' ? 'register' : 'login');
+  });
+
+  passwordResetButton.addEventListener('click', async () => {
+    const email = authEmail.value.trim();
+    if (!email) {
+      setAuthMessage('ENTER_YOUR_EMAIL_FIRST.');
+      authEmail.focus();
+      return;
+    }
+    try {
+      await auth.sendPasswordResetEmail(email);
+      setAuthMessage('PASSWORD_RESET_EMAIL_SENT_IF_ACCOUNT_EXISTS.', true);
+    } catch (error) {
+      console.error('Password reset request failed:', error);
+      setAuthMessage(authErrorMessage(error));
+    }
+  });
+
+  document.getElementById('sign-out-btn').addEventListener('click', async () => {
+    const signOutButton = document.getElementById('sign-out-btn');
+    signOutButton.disabled = true;
+    try {
+      if (activeConnectionRef) {
+        try {
+          await activeConnectionRef.remove();
+        } catch (error) {
+          console.error('Presence cleanup failed during sign-out:', error);
+        }
+      }
+      await auth.signOut();
+    } catch (error) {
+      console.error('Sign-out failed:', error);
+      document.getElementById('chat-status').textContent = 'SYS_STATUS: SIGN_OUT_FAILED';
+    } finally {
+      signOutButton.disabled = false;
+    }
   });
 
   // Check if we are in an iframe via query param
@@ -300,7 +556,7 @@
   }
 
   let userSettings = {
-    name: localStorage.getItem('chat-name') || 'ANON',
+    name: localStorage.getItem('chat-name') || 'USER',
     color: localStorage.getItem('chat-color') || '#ff0000',
     style: localStorage.getItem('chat-style') || 'normal'
   };
@@ -328,7 +584,7 @@
     settingsPanel.style.display = 'none';
     settingsOverlay.style.display = 'none';
     
-    userSettings.name = document.getElementById('settings-name').value || 'ANON';
+    userSettings.name = document.getElementById('settings-name').value || 'USER';
     userSettings.color = document.getElementById('color-picker').value;
     userSettings.style = document.getElementById('style-select').value;
     
@@ -343,45 +599,18 @@
     closeSettings.click();
   });
 
-  db.limitToLast(50).on('value', (snapshot) => {
-    msgContainer.innerHTML = ""; 
-    snapshot.forEach((child) => {
-      const data = child.val();
-      const div = document.createElement('div');
-      div.className = 'msg';
-      
-      const authorSpan = document.createElement('span');
-      authorSpan.className = 'msg-author';
-      authorSpan.textContent = (data.author || 'ANON') + ':';
-      authorSpan.style.color = data.color || '#ff0000';
-      
-      const textSpan = document.createElement('span');
-      textSpan.textContent = data.text || '';
-      if (data.style === 'bold') textSpan.style.fontWeight = 'bold';
-      if (data.style === 'italic') textSpan.style.fontStyle = 'italic';
-      
-      div.appendChild(authorSpan);
-      div.appendChild(textSpan);
-      msgContainer.appendChild(div);
-    });
-    msgContainer.scrollTop = msgContainer.scrollHeight;
-  }, (error) => {
-    console.error('Chat history read failed:', error);
-    document.getElementById('chat-status').textContent = 'SYS_STATUS: CHAT_UNAVAILABLE';
-  });
-
   async function sendMessage() {
     const text = chatInput.value.trim().slice(0, 500);
     if (!text) return;
 
     try {
-      const user = await firebaseUserReady;
-      if (!user) throw new Error('Anonymous sign-in is unavailable.');
+      const user = activeUser;
+      if (!user || user.isAnonymous) throw new Error('A registered account is required to send messages.');
       const color = /^#[0-9a-f]{6}$/i.test(userSettings.color) ? userSettings.color : '#ff0000';
       const style = ['normal', 'bold', 'italic'].includes(userSettings.style) ? userSettings.style : 'normal';
       await db.push({
         uid: user.uid,
-        author: (userSettings.name || 'ANON').trim().slice(0, 30),
+        author: (userSettings.name || 'USER').trim().slice(0, 30),
         text,
         color,
         style,
@@ -395,7 +624,6 @@
   }
 
   // --- NPC CHAT LOGIC ---
-  let currentChannel = 'global';
   const npcContainer = document.getElementById('npc-messages-container');
   
   const forcedMessages = [
