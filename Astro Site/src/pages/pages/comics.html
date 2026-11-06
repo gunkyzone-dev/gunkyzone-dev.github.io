@@ -93,6 +93,16 @@
     return fileName.replace(/(?:_compressed)?\.pdf$/i, '').toLowerCase();
   }
 
+  function escapeHtml(value) {
+    return String(value || '').replace(/[&<>"']/g, character => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    })[character]);
+  }
+
   function mergeComics(...groups) {
     const comicsByIssue = new Map();
     groups.forEach(group => {
@@ -100,10 +110,16 @@
       group.forEach(comic => {
         const issueKey = comicIssueKey(comic);
         if (!issueKey) return;
-        comicsByIssue.set(issueKey, {
-          ...comicsByIssue.get(issueKey),
+        const previous = comicsByIssue.get(issueKey) || {};
+        const mergedComic = {
+          ...previous,
           ...comic
-        });
+        };
+        if (previous.titleOverride && !comic.titleOverride) {
+          mergedComic.title = previous.title;
+          mergedComic.titleOverride = true;
+        }
+        comicsByIssue.set(issueKey, mergedComic);
       });
     });
     return [...comicsByIssue.values()].sort((a, b) => (b.uploadedAt || 0) - (a.uploadedAt || 0));
@@ -156,7 +172,7 @@
       grid.innerHTML += `
         <div class="comic-card" data-url="${safeUrl}" onclick="openComic(this.dataset.url)">
           <img class="thumb" src="${safeThumbnail}" loading="lazy" decoding="async" alt="THUMB">
-          <div class="info">${comic.title}</div>
+          <div class="info">${escapeHtml(comic.title || 'UNTITLED')}</div>
         </div>`;
     });
   }
