@@ -120,7 +120,7 @@ ca      100% { transform: none; filter: none; opacity: 1; }
       <span id="type-welcome"></span><span id="welcome-cursor" class="cursor" style="display:none;"></span>
     </div>
 
-    <div id="daily-transmission" class="transmission-box">LOADING_SIGNAL...</div>
+    <div id="daily-transmission" class="transmission-box"></div>
 
     <div class="section-label">> LATEST_ENTRIES</div>
     <div id="recent-entries" class="recent-grid">LOADING_DATA...</div>
@@ -590,49 +590,13 @@ ca      100% { transform: none; filter: none; opacity: 1; }
     if (el) el.textContent = 'VISITS: ' + (snap.val() || 0).toLocaleString();
   });
 
-  // === TRANSMISSION OF THE DAY ===
-  const transmissions = [
-    "THE SIGNAL IS CLEAR TODAY. PROCEED.",
-    "SOMETHING IS COMING. CHECK BACK SOON.",
-    "ALL SYSTEMS NOMINAL. FOR NOW.",
-    "THE WALLS ARE LISTENING.",
-    "NEW DATA INCOMING. STAND BY.",
-    "TODAY IS A GOOD DAY TO READ A COMIC.",
-    "TRANSMISSION CORRUPTED. PLEASE STAND BY.",
-    "THE ARCHIVE GROWS. SO DOES THE DARKNESS.",
-    "EYES OPEN. THEY ARE WATCHING.",
-    "STATUS: WEIRD. ALWAYS WEIRD.",
-    "DO NOT TURN OFF YOUR TERMINAL.",
-    "STAY A WHILE. STAY FOREVER.",
-    "UPLINK ESTABLISHED. SOUL DETECTED.",
-    "TODAY'S FORECAST: UNSETTLING.",
-    "ERROR IN MEMORY BLOCK 0x00. IGNORE IT.",
-    "THE GUNKYZONE APPRECIATES YOUR PRESENCE.",
-    "SIGNAL LOST... SIGNAL FOUND... YOU.",
-    "HE'S BEHIND YOU. DON'T LOOK.",
-    "THE NEXT CHAPTER IS ALMOST READY.",
-    "CLASSIFIED. BUT YOU ALREADY KNOW.",
-    "SCANNING FOR ANOMALIES... YOU QUALIFY.",
-    "REBOOT SCHEDULED FOR NEVER.",
-    "KEEP WATCHING THE SCREEN.",
-    "YOUR VISIT HAS BEEN LOGGED.",
-    "SYSTEM DREAMING. DO NOT DISTURB.",
-    "DOWNLOADING YOUR THOUGHTS...",
-    "YOU LOOK TIRED. STAY ANYWAY.",
-    "THE ARCHIVE NEVER FORGETS.",
-    "CONNECTION STABLE. MIND: UNSTABLE.",
-    "SOMETHING DREW YOU HERE. WE KNOW WHAT.",
-    "INITIALIZING DREAD PROTOCOL..."
-  ];
-  const dayIdx = Math.floor(Date.now() / 86400000) % transmissions.length;
+  // Add original daily messages here when ready.
+  const transmissions = [];
   const txEl = document.getElementById('daily-transmission');
-  // Check Firebase for a manually set transmission first
-  firebase.database().ref('site_text/transmission').once('value').then(snap => {
-    const manual = snap.val();
-    if (txEl) txEl.textContent = (manual && manual.trim()) ? manual.trim() : transmissions[dayIdx];
-  }).catch(() => {
-    if (txEl) txEl.textContent = transmissions[dayIdx];
-  });
+  if (txEl && transmissions.length) {
+    const dayIdx = Math.floor(Date.now() / 86400000) % transmissions.length;
+    txEl.textContent = transmissions[dayIdx];
+  }
 
   // === GUESTBOOK ===
   firebase.database().ref('guestbook').orderByChild('ts').limitToLast(15).on('value', snap => {
