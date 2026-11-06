@@ -43,7 +43,7 @@ canvas{width:100%;height:auto;display:block;border:1px solid var(--dim);backgrou
   <div id="wrap">
     <div class="bar"><span>RUN.EXE</span><span id="perks">PERKS: NONE</span></div>
     <canvas id="c" aria-label="Endless runner game"></canvas>
-    <div class="hint">Space, up arrow or tap to jump. Down arrow to fall faster. X or FIST to punch. D for daily seed. 1-3 or tap to pick a perk.</div>
+    <div class="hint">Space, up arrow or tap to jump. Down arrow to fall faster. X or FIST to punch. Collect glowing orbs to recharge FIST. D for daily seed. 1-3 or tap to pick a perk.</div>
   </div>
 </main>
 <script>
@@ -56,6 +56,51 @@ let W=portraitMode.matches?MOBILE_W:DESKTOP_W;
 let H=portraitMode.matches?MOBILE_H:DESKTOP_H;
 let GROUND=portraitMode.matches?220:190;
 const CAMERA_ZOOM_SPRING=8,CAMERA_ZOOM_MAX=0.08;
+const RUN_CYCLE_FRAMES=7,PUNCH_FRAMES=4;
+function loadSpriteSheet(src,frameCount,label){
+  const image=new Image();
+  const sheet={image,frames:null,maxFrameHeight:0};
+  image.addEventListener('load',()=>{
+    const frameWidth=image.naturalWidth/frameCount;
+    if(!Number.isInteger(frameWidth)||frameWidth<=0||!image.naturalHeight){
+      console.error(`${label} sprite sheet must contain ${frameCount} equal-width frames.`);
+      return;
+    }
+    const scanCanvas=document.createElement('canvas');
+    scanCanvas.width=image.naturalWidth;scanCanvas.height=image.naturalHeight;
+    const scanCtx=scanCanvas.getContext('2d',{willReadFrequently:true});
+    if(!scanCtx){
+      console.error(`Could not inspect ${label} sprite sheet.`);
+      return;
+    }
+    scanCtx.drawImage(image,0,0);
+    const pixels=scanCtx.getImageData(0,0,scanCanvas.width,scanCanvas.height).data;
+    const bounds=Array.from({length:frameCount},()=>({left:frameWidth,top:scanCanvas.height,right:-1,bottom:-1}));
+    for(let y=0;y<scanCanvas.height;y++){
+      for(let x=0;x<scanCanvas.width;x++){
+        if(pixels[(y*scanCanvas.width+x)*4+3]===0)continue;
+        const frame=Math.floor(x/frameWidth),localX=x-frame*frameWidth,b=bounds[frame];
+        b.left=Math.min(b.left,localX);b.top=Math.min(b.top,y);
+        b.right=Math.max(b.right,localX);b.bottom=Math.max(b.bottom,y);
+      }
+    }
+    sheet.frames=bounds.map((b,i)=>({
+      x:i*frameWidth+b.left,y:b.top,width:b.right-b.left+1,height:b.bottom-b.top+1
+    }));
+    if(sheet.frames.some(frame=>frame.width<=0||frame.height<=0)){
+      sheet.frames=null;
+      console.error(`${label} sprite sheet contains an empty frame.`);
+      return;
+    }
+    sheet.maxFrameHeight=Math.max(...sheet.frames.map(frame=>frame.height));
+    scanCanvas.width=0;scanCanvas.height=0;
+  });
+  image.addEventListener('error',()=>console.error(`Could not load ${label} sprite sheet: ${src}.`));
+  image.src=src;
+  return sheet;
+}
+const runnerSheet=loadSpriteSheet('/Game%20Sprites/Sprite-0001.png',RUN_CYCLE_FRAMES,'RUN.EXE runner');
+const punchSheet=loadSpriteSheet('/Game%20Sprites/Sprite-0003.png',PUNCH_FRAMES,'RUN.EXE punch');
 const wrapEl=document.getElementById('wrap');
 const gameShell=document.getElementById('game-shell');
 const zoomOut=document.getElementById('zoom-out');
@@ -149,10 +194,11 @@ let S;
 function newRun(daily){
   const seed=daily?Number(today().replace(/-/g,'')):(Math.random()*4294967296)>>>0;
   S={
-    state:'play',daily,rnd:mulberry32(seed),prnd:mulberry32(seed^0x9e3779b9),
+    state:'play',daily,rnd:mulberry32(seed),prnd:mulberry32(seed^0x9e3779b9),orbRnd:mulberry32(seed^0x85ebca6b),
     t:0,cameraTime:0,cameraZoomPulse:0,cameraZoomVelocity:0,
     cameraShakeTime:0,cameraShakeDuration:0,cameraShakePower:0,cameraShakePhase:0,
     score:0,dist:0,speed:6,gap:300,picks:0,nextPerk:300,shield:0,flash:0,fistUses:0,punchTimer:0,giantTimer:0,
+    nextOrbDistance:Infinity,orbs:[],particles:[],impactTimer:0,impactX:0,impactY:0,pickupTimer:0,pickupX:0,pickupY:0,hitStop:0,
     perks:{},choices:[],obs:[],deadAt:0,final:0,newBest:false,
     hoverChoice:-1,cardHover:[],pickSelection:-1,pickSelectTime:0,
     p:{x:50,y:GROUND,vy:0,w:22,h:30,jumps:0,inv:0}
@@ -210,7 +256,10 @@ function applyPerk(i){
   const c=S.choices[i];if(!c)return;
   S.perks[c.id]=pk(c.id)+1;
   if(c.id==='shield')S.shield++;
-  if(c.id==='fist')S.fistUses=FIST_MAX_USES;
+  if(c.id==='fist'){
+    S.fistUses=FIST_MAX_USES;
+    S.nextOrbDistance=S.dist+380+S.orbRnd()*140;
+  }
   if(c.id==='giant')S.giantTimer=15*60;
   S.picks++;S.nextPerk=S.score+450+80*S.picks;S.p.inv=30;S.state='play';
   S.pickSelection=-1;
@@ -223,15 +272,26 @@ function die(){
   if(S.newBest)store.set(k,S.final);
   updateFistControl();
 }
-function triggerCameraShake(power){
+function triggerCameraShake(power,duration=25){
   S.cameraShakeTime=0;
-  S.cameraShakeDuration=25;
+  S.cameraShakeDuration=duration;
   S.cameraShakePower=power;
   S.cameraShakePhase+=Math.PI*0.61803398875;
+}
+function burstParticles(x,y,count,speed){
+  for(let i=0;i<count;i++){
+    const angle=Math.PI*2*i/count-Math.PI/2;
+    const force=speed*(0.72+(i%4)*0.12);
+    S.particles.push({
+      x,y,vx:Math.cos(angle)*force,vy:Math.sin(angle)*force-0.4,
+      life:18,maxLife:18,size:i%3===0?3:2,color:i%2?RED:FG
+    });
+  }
 }
 function useFist(){
   if(S.state!=='play')return;
   if(S.fistUses<=0){triggerCameraZoom(0.02);return}
+  S.punchTimer=16;
   const p=S.p,minX=p.x+p.w-4,maxX=p.x+p.w+140;
   let targetIndex=-1,targetX=Infinity;
   for(let i=0;i<S.obs.length;i++){
@@ -242,11 +302,17 @@ function useFist(){
     }
   }
   if(targetIndex<0){triggerCameraZoom(0.025);return}
+  const target=S.obs[targetIndex];
+  S.impactX=target.x+target.w/2;
+  S.impactY=target.y-target.h/2;
   S.obs.splice(targetIndex,1);
   S.fistUses--;
-  S.punchTimer=16;
-  triggerCameraZoom(0.05);
-  triggerCameraShake(6);
+  S.hitStop=2.5;
+  S.impactTimer=22;
+  S.flash=8;
+  burstParticles(S.impactX,S.impactY,14,3.8);
+  triggerCameraZoom(CAMERA_ZOOM_MAX);
+  triggerCameraShake(9,32);
   updatePerkLabel();
 }
 function hit(i){
@@ -289,6 +355,13 @@ function update(dt){
     if(S.cameraShakeTime>=S.cameraShakeDuration)S.cameraShakePower=0;
   }
   if(S.punchTimer>0)S.punchTimer=Math.max(0,S.punchTimer-dt);
+  if(S.impactTimer>0)S.impactTimer=Math.max(0,S.impactTimer-dt);
+  if(S.pickupTimer>0)S.pickupTimer=Math.max(0,S.pickupTimer-dt);
+  for(const particle of S.particles){
+    particle.x+=particle.vx*dt;particle.y+=particle.vy*dt;
+    particle.vy+=0.12*dt;particle.vx*=Math.pow(0.96,dt);particle.life-=dt;
+  }
+  S.particles=S.particles.filter(particle=>particle.life>0);
   if(S.state!=='play')return;
   if(S.giantTimer>0){
     const secondsLeft=Math.ceil(S.giantTimer/60);
@@ -315,10 +388,32 @@ function update(dt){
   if(!last||last.x+last.w<W-S.gap)spawn();
   for(const o of S.obs)o.x-=(S.speed+(o.kind==='bird'?1.8:0))*dt;
   S.obs=S.obs.filter(o=>o.x+o.w>-10);
+  if(pk('fist')&&S.fistUses<FIST_MAX_USES&&!S.orbs.length&&S.dist>=S.nextOrbDistance){
+    S.orbs.push({x:W+10+(portraitMode.matches?150:0),y:GROUND-34,r:8,phase:S.orbRnd()*Math.PI*2});
+    S.nextOrbDistance=S.dist+820+S.orbRnd()*220;
+  }
+  for(const orb of S.orbs)orb.x-=S.speed*dt;
+  S.orbs=S.orbs.filter(orb=>orb.x+orb.r>-10);
+
+  const playerWidth=p.w*playerScale,playerX=p.x-(playerWidth-p.w)/2;
+  for(let i=S.orbs.length-1;i>=0;i--){
+    const orb=S.orbs[i],centerY=orb.y+Math.sin(S.cameraTime*0.13+orb.phase)*2;
+    const nearX=Math.max(playerX,Math.min(orb.x,playerX+playerWidth));
+    const nearY=Math.max(p.y-playerHeight,Math.min(centerY,p.y));
+    const dx=orb.x-nearX,dy=centerY-nearY;
+    if(dx*dx+dy*dy<=orb.r*orb.r){
+      S.orbs.splice(i,1);
+      S.fistUses=Math.min(FIST_MAX_USES,S.fistUses+1);
+      S.pickupTimer=22;S.pickupX=orb.x;S.pickupY=centerY;
+      burstParticles(orb.x,centerY,8,2.4);
+      triggerCameraZoom(0.025);
+      triggerCameraShake(2,18);
+      updatePerkLabel();
+    }
+  }
 
   if(p.inv<=0||S.giantTimer>0){
     const inset=4+3*pk('tiny');
-    const playerWidth=p.w*playerScale,playerX=p.x-(playerWidth-p.w)/2;
     const ax=playerX+inset,ay=p.y-playerHeight+inset,aw=playerWidth-2*inset,ah=playerHeight-2*inset;
     for(let i=0;i<S.obs.length;i++){
       const o=S.obs[i];
@@ -331,6 +426,61 @@ function update(dt){
 function sprite(rows,x,y,s,col){
   ctx.fillStyle=col;
   for(let j=0;j<rows.length;j++){const r=rows[j];for(let i=0;i<r.length;i++)if(r[i]==='#')ctx.fillRect(x+i*s,y+j*s,s,s)}
+}
+function drawPlayer(p,playerX,playerWidth,playerHeight,playerScale){
+  if(runnerSheet.frames){
+    const frame=runnerSheet.frames[Math.floor(S.t/6)%RUN_CYCLE_FRAMES];
+    const scale=playerHeight*1.2/runnerSheet.maxFrameHeight;
+    const width=frame.width*scale,height=frame.height*scale;
+    ctx.drawImage(runnerSheet.image,frame.x,frame.y,frame.width,frame.height,
+      playerX+(playerWidth-width)/2,p.y-height,width,height);
+    return;
+  }
+  const legs=p.y>=GROUND&&Math.floor(S.t/6)%2?LEGS_B:LEGS_A;
+  sprite(BODY.concat(legs,BLANK),playerX,p.y-playerHeight,2*playerScale,FG);
+}
+function drawPunch(p,playerX,playerWidth,playerHeight){
+  const progress=1-S.punchTimer/16;
+  const frameIndex=Math.min(PUNCH_FRAMES-1,Math.floor(progress*PUNCH_FRAMES));
+  const frame=punchSheet.frames[frameIndex];
+  const scale=playerHeight*1.2/punchSheet.maxFrameHeight;
+  const width=frame.width*scale,height=frame.height*scale;
+  ctx.drawImage(punchSheet.image,frame.x,frame.y,frame.width,frame.height,
+    playerX+(playerWidth-width)/2,p.y-height,width,height);
+}
+function drawOrb(orb){
+  const y=orb.y+Math.sin(S.cameraTime*0.13+orb.phase)*2;
+  const pulse=0.5+Math.sin(S.cameraTime*0.18+orb.phase)*0.5;
+  ctx.save();
+  ctx.globalAlpha=0.3+pulse*0.16;ctx.fillStyle=RED;ctx.shadowColor=RED;ctx.shadowBlur=8;
+  ctx.beginPath();ctx.arc(orb.x,y,10+pulse*2,0,Math.PI*2);ctx.fill();
+  ctx.globalAlpha=0.95;ctx.shadowBlur=0;ctx.strokeStyle=FG;ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.arc(orb.x,y,6+pulse,0,Math.PI*2);ctx.stroke();
+  ctx.fillStyle=RED;ctx.beginPath();ctx.arc(orb.x,y,3,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=FG;ctx.fillRect(orb.x-1,y-4,2,8);ctx.fillRect(orb.x-4,y-1,8,2);
+  ctx.restore();
+}
+function drawCombatEffects(){
+  for(const particle of S.particles){
+    ctx.save();ctx.globalAlpha=Math.max(0,particle.life/particle.maxLife);
+    ctx.fillStyle=particle.color;ctx.fillRect(particle.x,particle.y,particle.size,particle.size);ctx.restore();
+  }
+  if(S.impactTimer>0){
+    const progress=1-S.impactTimer/22,radius=5+progress*34;
+    ctx.save();ctx.globalAlpha=1-progress;ctx.strokeStyle=FG;ctx.lineWidth=2.5-progress;
+    ctx.beginPath();ctx.arc(S.impactX,S.impactY,radius,0,Math.PI*2);ctx.stroke();
+    ctx.globalAlpha=(1-progress)*0.8;ctx.strokeStyle=RED;ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(S.impactX,S.impactY,radius*0.62,0,Math.PI*2);ctx.stroke();
+    ctx.globalAlpha=1-progress;ctx.font=`bold 14px ${MONO}`;ctx.textAlign='center';
+    ctx.lineWidth=3;ctx.strokeStyle=RED;ctx.strokeText('THUD!',S.impactX,S.impactY-17-progress*8);
+    ctx.fillStyle=FG;ctx.fillText('THUD!',S.impactX,S.impactY-17-progress*8);ctx.restore();
+  }
+  if(S.pickupTimer>0){
+    ctx.save();ctx.globalAlpha=Math.min(1,S.pickupTimer/10);ctx.font=`bold 11px ${MONO}`;
+    ctx.textAlign='center';ctx.lineWidth=2;ctx.strokeStyle=RED;
+    ctx.strokeText('+1 FIST',S.pickupX,S.pickupY-13-(22-S.pickupTimer)*0.5);
+    ctx.fillStyle=FG;ctx.fillText('+1 FIST',S.pickupX,S.pickupY-13-(22-S.pickupTimer)*0.5);ctx.restore();
+  }
 }
 function text(t,x,y,size,col,align){
   ctx.font=size+'px '+MONO;ctx.fillStyle=col;ctx.textAlign=align||'center';ctx.fillText(t,x,y);
@@ -383,14 +533,17 @@ function draw(){
       }
     }
   }
+  for(const orb of S.orbs)drawOrb(orb);
+  drawCombatEffects();
 
-  const p=S.p,onGround=p.y>=GROUND,playerScale=S.giantTimer>0?2:1;
+  const p=S.p,playerScale=S.giantTimer>0?2:1;
   const playerWidth=p.w*playerScale,playerHeight=p.h*playerScale,playerX=p.x-(playerWidth-p.w)/2;
-  if(!(p.inv>0&&Math.floor(S.t/3)%2)){
-    const legs=onGround&&Math.floor(S.t/6)%2?LEGS_B:LEGS_A;
-    sprite(BODY.concat(legs,BLANK),playerX,p.y-playerHeight,2*playerScale,FG);
+  if(S.punchTimer>0&&punchSheet.frames){
+    drawPunch(p,playerX,playerWidth,playerHeight);
+  }else if(!(p.inv>0&&Math.floor(S.t/3)%2)){
+    drawPlayer(p,playerX,playerWidth,playerHeight,playerScale);
   }
-  if(S.punchTimer>0){
+  if(S.punchTimer>0&&!punchSheet.frames){
     const punchProgress=1-S.punchTimer/16;
     const fistX=playerX+playerWidth+2+Math.sin(punchProgress*Math.PI)*30;
     const fistY=p.y-playerHeight+9*playerScale;
@@ -489,7 +642,12 @@ newRun(false);S.state='title';
 let last=performance.now();
 function frame(now){
   const dt=Math.min(2.5,(now-last)/16.667);last=now;
-  update(dt);draw();requestAnimationFrame(frame);
+  if(S.hitStop>0){
+    const stopped=Math.min(dt,S.hitStop);
+    S.hitStop-=stopped;
+    if(dt>stopped)update(dt-stopped);
+  }else update(dt);
+  draw();requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
 })();
