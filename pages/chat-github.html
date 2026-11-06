@@ -14,7 +14,7 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #020202; --bg2: #080505; --border: #2a0000;
+      --bg: #020202; --bg2: #080505; --border: #2a0000; --dim: #5a3a3a;
       --text: #d4c0c0; --accent: #ff0000; --accent2: #9b0000;
       --font-mono: 'VT323', monospace;
     }
@@ -100,13 +100,19 @@
       white-space: pre-wrap;
     }
     .msg-author { font-weight: bold; text-transform: uppercase; margin-right: 8px; }
+    .msg-time { color: var(--dim); font-size: 0.75em; margin-right: 8px; white-space: nowrap; }
+    .msg.effect-glow { text-shadow: 0 0 4px currentColor, 0 0 9px rgba(255, 0, 0, 0.45); }
+    .msg.effect-glitch .msg-author { animation: chromatic 0.16s infinite linear; }
+    .msg.effect-scanlines {
+      background-image: repeating-linear-gradient(transparent 0 3px, rgba(255, 0, 0, 0.09) 3px 4px);
+    }
     .input-wrap { display: flex; gap: 5px; border: 1px solid var(--border); background: var(--bg2); padding: 5px; align-items: center; }
     input {
       background: transparent; border: none; color: #fff; 
       padding: 8px; font-family: var(--font-mono); font-size: 18px; outline: none; flex-grow: 1;
       min-width: 0; /* Prevents input from pushing past flex container */
     }
-    #name-input { width: 80px; flex-shrink: 0; border-right: 1px solid var(--border); color: var(--accent2); text-align: center; }
+    #name-input { width: 88px; flex: 0 0 88px; border-right: 1px solid var(--border); color: var(--accent2); text-align: center; }
     #messages-container::-webkit-scrollbar, #npc-messages-container::-webkit-scrollbar { width: 6px; }
     #messages-container::-webkit-scrollbar-thumb, #npc-messages-container::-webkit-scrollbar-thumb { background: var(--accent2); }
     @keyframes scanIn { from { opacity: 0; transform: translateX(-5px); } to { opacity: 1; transform: translateX(0); } }
@@ -117,6 +123,13 @@
       padding: 8px 12px; cursor: pointer; font-family: var(--font-mono); font-size: 16px;
     }
     #settings-btn:hover { background: var(--bg2); }
+    #apply-name-btn {
+      flex: 0 0 auto; background: transparent; border: 1px solid var(--accent2);
+      color: var(--accent); padding: 7px 8px; cursor: pointer; font-family: var(--font-mono);
+      font-size: 15px; white-space: nowrap;
+    }
+    #apply-name-btn:hover { background: var(--accent2); color: #fff; }
+    #apply-name-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     
     #settings-panel {
       position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -136,7 +149,7 @@
       background: transparent; cursor: pointer;
     }
     
-    #style-select {
+    #style-select, #effect-select {
       background: var(--bg2); border: 1px solid var(--border); color: var(--text);
       padding: 5px; font-family: var(--font-mono);
     }
@@ -261,9 +274,10 @@
     </div>
 
     <div class="input-wrap">
-      <input type="text" id="name-input" placeholder="USER" maxlength="10">
+      <input type="text" id="name-input" placeholder="CALLSIGN" aria-label="Chat display name" maxlength="10">
+      <button id="apply-name-btn" type="button" aria-label="Apply chat display name">APPLY</button>
       <input type="text" id="chat-input" placeholder="ENTER MESSAGE..." autocomplete="off">
-      <button id="settings-btn">⚙</button>
+      <button id="settings-btn" type="button" aria-label="Chat customization">⚙</button>
     </div>
   </div>
 </div>
@@ -271,22 +285,31 @@
 <div id="settings-overlay"></div>
 <div id="settings-panel">
   <div class="setting-row">
-    <label>Name:</label>
+    <label for="settings-name">Callsign:</label>
     <input type="text" id="settings-name" maxlength="10" style="background: var(--bg2); border: 1px solid var(--border); color: var(--text); padding: 5px; font-family: var(--font-mono);">
   </div>
   <div class="setting-row">
-    <label>Color:</label>
+    <label for="color-picker">Name color:</label>
     <input type="color" id="color-picker" value="#ff0000">
   </div>
   <div class="setting-row">
-    <label>Style:</label>
+    <label for="style-select">Message style:</label>
     <select id="style-select">
       <option value="normal">Normal</option>
       <option value="bold">Bold</option>
       <option value="italic">Italic</option>
     </select>
   </div>
-  <button id="close-settings">CLOSE</button>
+  <div class="setting-row">
+    <label for="effect-select">Display effect:</label>
+    <select id="effect-select">
+      <option value="none">None</option>
+      <option value="glow">Phosphor glow</option>
+      <option value="glitch">Chromatic glitch</option>
+      <option value="scanlines">Scanlines</option>
+    </select>
+  </div>
+  <button id="close-settings" type="button">APPLY_SETTINGS</button>
 </div>
 
 <script>
@@ -306,6 +329,7 @@
   const msgContainer = document.getElementById('messages-container');
   const chatInput = document.getElementById('chat-input');
   const nameInput = document.getElementById('name-input');
+  const applyNameButton = document.getElementById('apply-name-btn');
   const auth = firebase.auth();
   const authScreen = document.getElementById('auth-screen');
   const chatApp = document.getElementById('chat-app');
@@ -375,6 +399,19 @@
     activeConnectionRef = null;
   }
 
+  function appendMessageTimestamp(message, timestamp) {
+    if (timestamp === null || timestamp === undefined || timestamp === '') return;
+    const date = new Date(Number(timestamp));
+    if (!Number.isFinite(date.getTime())) return;
+
+    const timeElement = document.createElement('time');
+    timeElement.className = 'msg-time';
+    timeElement.dateTime = date.toISOString();
+    timeElement.title = date.toLocaleString();
+    timeElement.textContent = `[${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}]`;
+    message.insertBefore(timeElement, message.firstChild);
+  }
+
   function renderChatMessages(snapshot) {
     msgContainer.replaceChildren();
     snapshot.forEach((child) => {
@@ -387,16 +424,25 @@
       authorSpan.textContent = (data.author || 'USER') + ':';
       authorSpan.style.color = /^#[0-9a-f]{6}$/i.test(data.color) ? data.color : '#ff0000';
 
+      appendMessageTimestamp(div, data.timestamp);
+
       const textSpan = document.createElement('span');
       textSpan.textContent = data.text || '';
       if (data.style === 'bold') textSpan.style.fontWeight = 'bold';
       if (data.style === 'italic') textSpan.style.fontStyle = 'italic';
 
+      applyMessageEffect(div);
       div.appendChild(authorSpan);
       div.appendChild(textSpan);
       msgContainer.appendChild(div);
     });
     msgContainer.scrollTop = msgContainer.scrollHeight;
+  }
+
+  function applyMessageEffect(message) {
+    ['glow', 'glitch', 'scanlines'].forEach((effect) => {
+      message.classList.toggle(`effect-${effect}`, userSettings.effect === effect);
+    });
   }
 
   function attachChatListeners(user) {
@@ -553,16 +599,24 @@
     document.getElementById('chat-container').style.paddingTop = '40px';
   }
 
+  const savedName = localStorage.getItem('chat-name') || 'USER';
+  const savedColor = localStorage.getItem('chat-color') || '#ff0000';
+  const savedStyle = localStorage.getItem('chat-style') || 'normal';
+  const savedEffect = localStorage.getItem('chat-effect') || 'none';
+  const allowedStyles = ['normal', 'bold', 'italic'];
+  const allowedEffects = ['none', 'glow', 'glitch', 'scanlines'];
   let userSettings = {
-    name: localStorage.getItem('chat-name') || 'USER',
-    color: localStorage.getItem('chat-color') || '#ff0000',
-    style: localStorage.getItem('chat-style') || 'normal'
+    name: savedName.trim().slice(0, 10) || 'USER',
+    color: /^#[0-9a-f]{6}$/i.test(savedColor) ? savedColor : '#ff0000',
+    style: allowedStyles.includes(savedStyle) ? savedStyle : 'normal',
+    effect: allowedEffects.includes(savedEffect) ? savedEffect : 'none'
   };
 
   nameInput.value = userSettings.name;
   document.getElementById('settings-name').value = userSettings.name;
   document.getElementById('color-picker').value = userSettings.color;
   document.getElementById('style-select').value = userSettings.style;
+  document.getElementById('effect-select').value = userSettings.effect;
 
   if (sessionStorage.getItem('npc_chat_terminated') === 'true') {
     document.getElementById('chan-c').textContent = '# ???';
@@ -572,8 +626,35 @@
   const settingsPanel = document.getElementById('settings-panel');
   const settingsOverlay = document.getElementById('settings-overlay');
   const closeSettings = document.getElementById('close-settings');
+  let applyNameTimer;
+
+  function applyUsername() {
+    userSettings.name = nameInput.value.trim().slice(0, 10) || 'USER';
+    nameInput.value = userSettings.name;
+    document.getElementById('settings-name').value = userSettings.name;
+    localStorage.setItem('chat-name', userSettings.name);
+    applyNameButton.textContent = 'APPLIED';
+    window.clearTimeout(applyNameTimer);
+    applyNameTimer = window.setTimeout(() => {
+      applyNameButton.textContent = 'APPLY';
+    }, 1200);
+  }
+
+  applyNameButton.addEventListener('click', () => {
+    applyUsername();
+    chatInput.focus();
+  });
+
+  nameInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      applyUsername();
+      chatInput.focus();
+    }
+  });
 
   settingsBtn.addEventListener('click', () => {
+    document.getElementById('settings-name').value = nameInput.value;
     settingsPanel.style.display = 'block';
     settingsOverlay.style.display = 'block';
   });
@@ -582,15 +663,20 @@
     settingsPanel.style.display = 'none';
     settingsOverlay.style.display = 'none';
     
-    userSettings.name = document.getElementById('settings-name').value || 'USER';
-    userSettings.color = document.getElementById('color-picker').value;
-    userSettings.style = document.getElementById('style-select').value;
-    
-    localStorage.setItem('chat-name', userSettings.name);
+    nameInput.value = document.getElementById('settings-name').value;
+    applyUsername();
+    const selectedColor = document.getElementById('color-picker').value;
+    const selectedStyle = document.getElementById('style-select').value;
+    const selectedEffect = document.getElementById('effect-select').value;
+    userSettings.color = /^#[0-9a-f]{6}$/i.test(selectedColor) ? selectedColor : '#ff0000';
+    userSettings.style = allowedStyles.includes(selectedStyle) ? selectedStyle : 'normal';
+    userSettings.effect = allowedEffects.includes(selectedEffect) ? selectedEffect : 'none';
+
     localStorage.setItem('chat-color', userSettings.color);
     localStorage.setItem('chat-style', userSettings.style);
-    
-    nameInput.value = userSettings.name;
+    localStorage.setItem('chat-effect', userSettings.effect);
+    document.querySelectorAll('#messages-container .msg, #npc-messages-container .msg').forEach(applyMessageEffect);
+
   });
 
   settingsOverlay.addEventListener('click', () => {
@@ -623,6 +709,11 @@
 
   // --- NPC CHAT LOGIC ---
   const npcContainer = document.getElementById('npc-messages-container');
+  const npcWelcomeMessage = npcContainer.querySelector('.msg');
+  if (npcWelcomeMessage) {
+    appendMessageTimestamp(npcWelcomeMessage, Date.now());
+    applyMessageEffect(npcWelcomeMessage);
+  }
   
   const forcedMessages = [
     "Hello? is someone there?",
@@ -698,6 +789,7 @@
     chatInput.value = "";
     chatInput.placeholder = "TYPE YOUR MESSAGE...";
     nameInput.disabled = true;
+    applyNameButton.disabled = true;
     chatInput.focus();
   }
 
@@ -724,6 +816,7 @@
     chatInput.placeholder = "ENTER MESSAGE...";
     chatInput.disabled = false;
     nameInput.disabled = false;
+    applyNameButton.disabled = false;
     
     clearTimeout(ghostTimer);
     clearInterval(ghostInterval);
@@ -776,6 +869,8 @@
         
         const finalDiv = document.createElement('div');
         finalDiv.className = 'msg';
+        appendMessageTimestamp(finalDiv, Date.now());
+        applyMessageEffect(finalDiv);
         finalDiv.innerHTML = `<span class="msg-author" style="color:#ffffff">C:</span> <span id="final-npc-text"></span>`;
         npcContainer.appendChild(finalDiv);
         
@@ -852,7 +947,17 @@
   function appendNpcMsg(author, text, color) {
     const div = document.createElement('div');
     div.className = 'msg';
-    div.innerHTML = `<span class="msg-author" style="color:${color}">${author}:</span> <span>${text}</span>`;
+    appendMessageTimestamp(div, Date.now());
+    applyMessageEffect(div);
+
+    const authorSpan = document.createElement('span');
+    authorSpan.className = 'msg-author';
+    authorSpan.textContent = `${author}:`;
+    authorSpan.style.color = /^#[0-9a-f]{6}$/i.test(color) ? color : '#ff0000';
+
+    const textSpan = document.createElement('span');
+    textSpan.textContent = text;
+    div.append(authorSpan, textSpan);
     npcContainer.appendChild(div);
     npcContainer.scrollTop = npcContainer.scrollHeight;
   }
