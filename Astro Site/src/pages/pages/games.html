@@ -18,9 +18,36 @@
     .section-label { margin: 0 0 10px; color: var(--accent2); border-bottom: 1px solid var(--border); }
     .game-panel { border: 1px solid var(--border); background: var(--panel); padding: 10px; }
     .game-title { margin: 0 0 8px; color: var(--accent); font-size: 26px; }
-    .game-launch { display: inline-block; padding: 8px 14px; border: 1px solid var(--accent2); color: var(--accent); text-decoration: none; }
-    .game-launch:hover, .game-launch:focus-visible { color: #fff; background: var(--accent2); outline: 2px solid var(--accent); outline-offset: 2px; }
-    @media (max-width: 560px) { .game-panel { padding: 6px; } }
+    .game-layout { display: flex; flex-direction: column; gap: 16px; }
+    iframe { display: block; width: 100%; height: 380px; border: 1px solid var(--border); background: #000; }
+    #leaderboard { border: 1px solid var(--border); background: var(--panel); padding: 10px 12px; color: var(--text); }
+    #leaderboard-heading { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 8px; color: var(--accent); font-size: 20px; }
+    #leaderboard-heading h2 { margin: 0; font: inherit; }
+    #leaderboard-heading span, #leaderboard-status { color: var(--dim); font-size: 16px; }
+    #leaderboard-list { list-style: none; margin: 0 0 10px; padding: 0; }
+    #leaderboard-list li { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; border-bottom: 1px solid var(--border); }
+    #leaderboard-auth { margin: 8px 0; }
+    #leaderboard-credentials { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+    #leaderboard-auth label, #leaderboard-form label { display: block; margin-bottom: 5px; color: var(--dim); font-size: 16px; }
+    #leaderboard-email, #leaderboard-password, #leaderboard-name { width: 100%; min-width: 0; border: 1px solid var(--dim); background: #000; color: var(--text); font: inherit; padding: 6px; }
+    #leaderboard-auth-buttons, #leaderboard-auth-actions, #leaderboard-signed-in { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+    #leaderboard-account { flex: 1; color: var(--dim); font-size: 16px; }
+    #leaderboard-auth-status { min-height: 1.2em; margin: 6px 0 0; color: var(--dim); font-size: 16px; }
+    #leaderboard-auth-status[data-error="true"], #leaderboard-status[data-error="true"] { color: var(--accent); }
+    #leaderboard-form-row { display: flex; gap: 8px; }
+    #leaderboard-auth button, #leaderboard-form button { border: 1px solid var(--dim); background: var(--panel); color: var(--text); font: inherit; padding: 5px 9px; cursor: pointer; }
+    #leaderboard-auth button:focus-visible, #leaderboard-form button:focus-visible, #leaderboard-email:focus-visible, #leaderboard-password:focus-visible, #leaderboard-name:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    #leaderboard-auth button:disabled, #leaderboard-form button:disabled { opacity: .45; cursor: not-allowed; }
+    #leaderboard-auth-actions button { border: 0; background: transparent; color: var(--dim); padding: 4px 0; text-decoration: underline; }
+    #leaderboard-auth-actions[hidden], #leaderboard-email-form[hidden], #leaderboard-signed-in[hidden] { display: none; }
+    #leaderboard-status { min-height: 1.2em; margin: 8px 0 0; }
+    @media (max-width: 560px) {
+      .game-panel { padding: 6px; }
+      iframe { height: 500px; }
+      #leaderboard-credentials { grid-template-columns: 1fr; }
+      #leaderboard-auth-buttons, #leaderboard-form-row { flex-direction: column; }
+      #leaderboard-auth button, #leaderboard-form button { min-height: 42px; }
+    }
   </style>
 </head>
 <body>
@@ -35,14 +62,348 @@
         <a href="chat-github.html">CHAT</a>
       </nav>
     </header>
-    <section aria-labelledby="run-title">
-      <h2 class="section-label">> GAME_ARCHIVE</h2>
+    <h2 class="section-label">> GAME_ARCHIVE</h2>
+    <div class="game-layout">
       <div class="game-panel">
         <h3 class="game-title" id="run-title">RUN.EXE</h3>
-        <p>Play the latest RUN.EXE build.</p>
-        <a class="game-launch" href="RUN.EXE.html">LAUNCH RUN.EXE</a>
+        <iframe id="run-game" src="RUN_WIP.html" title="RUN.EXE endless runner"></iframe>
       </div>
-    </section>
+      <section id="leaderboard" aria-labelledby="leaderboard-title">
+        <div id="leaderboard-heading"><h2 id="leaderboard-title">ONLINE LEADERBOARD</h2><span>ALL-TIME TOP 10</span></div>
+        <ol id="leaderboard-list" aria-live="polite"><li>CONNECTING...</li></ol>
+        <div id="leaderboard-auth">
+          <form id="leaderboard-email-form">
+            <div id="leaderboard-credentials">
+              <label for="leaderboard-email">EMAIL
+                <input id="leaderboard-email" type="email" autocomplete="email" required>
+              </label>
+              <label for="leaderboard-password">PASSWORD
+                <input id="leaderboard-password" type="password" autocomplete="current-password" minlength="6" required>
+              </label>
+            </div>
+            <div id="leaderboard-auth-buttons">
+              <button id="leaderboard-email-submit" type="submit" disabled>SIGN_IN</button>
+              <button id="leaderboard-google-login" type="button" disabled>CONTINUE_WITH_GOOGLE</button>
+            </div>
+          </form>
+          <div id="leaderboard-auth-actions">
+            <button id="leaderboard-auth-mode-toggle" type="button" disabled>NEED AN ACCOUNT? REGISTER</button>
+            <button id="leaderboard-password-reset" type="button" disabled>RESET PASSWORD</button>
+          </div>
+          <div id="leaderboard-signed-in" hidden>
+            <span id="leaderboard-account" aria-live="polite"></span>
+            <button id="leaderboard-sign-out" type="button" disabled>SIGN_OUT</button>
+          </div>
+          <p id="leaderboard-auth-status" role="status" aria-live="polite"></p>
+        </div>
+        <form id="leaderboard-form">
+          <label for="leaderboard-name">PUBLIC DISPLAY NAME (24 CHARACTERS MAX)</label>
+          <div id="leaderboard-form-row">
+            <input id="leaderboard-name" name="name" type="text" maxlength="24" autocomplete="nickname" placeholder="RUNNER" required>
+            <button id="leaderboard-submit" type="submit" disabled>SUBMIT RUN</button>
+          </div>
+        </form>
+        <p id="leaderboard-status" role="status" aria-live="polite">CONNECTING TO LEADERBOARD...</p>
+      </section>
+    </div>
   </main>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <script>
+    (() => {
+      const gameFrame = document.getElementById('run-game');
+      const leaderboardList = document.getElementById('leaderboard-list');
+      const leaderboardForm = document.getElementById('leaderboard-form');
+      const leaderboardName = document.getElementById('leaderboard-name');
+      const leaderboardEmailForm = document.getElementById('leaderboard-email-form');
+      const leaderboardEmail = document.getElementById('leaderboard-email');
+      const leaderboardPassword = document.getElementById('leaderboard-password');
+      const leaderboardEmailSubmit = document.getElementById('leaderboard-email-submit');
+      const leaderboardGoogleLogin = document.getElementById('leaderboard-google-login');
+      const leaderboardAuthActions = document.getElementById('leaderboard-auth-actions');
+      const leaderboardAuthModeToggle = document.getElementById('leaderboard-auth-mode-toggle');
+      const leaderboardPasswordReset = document.getElementById('leaderboard-password-reset');
+      const leaderboardSignedIn = document.getElementById('leaderboard-signed-in');
+      const leaderboardAccount = document.getElementById('leaderboard-account');
+      const leaderboardSignOut = document.getElementById('leaderboard-sign-out');
+      const leaderboardAuthStatus = document.getElementById('leaderboard-auth-status');
+      const leaderboardSubmit = document.getElementById('leaderboard-submit');
+      const leaderboardStatus = document.getElementById('leaderboard-status');
+      let leaderboardRef = null;
+      let leaderboardAuth = null;
+      let leaderboardUser = null;
+      let leaderboardReady = false;
+      let leaderboardSubmitting = false;
+      let leaderboardAuthPending = false;
+      let leaderboardAuthMode = 'login';
+      let pendingRunScore = 0;
+
+      function setLeaderboardStatus(message, isError = false) {
+        leaderboardStatus.textContent = message;
+        leaderboardStatus.dataset.error = isError ? 'true' : 'false';
+      }
+
+      function setLeaderboardAuthStatus(message, isError = false) {
+        leaderboardAuthStatus.textContent = message;
+        leaderboardAuthStatus.dataset.error = isError ? 'true' : 'false';
+      }
+
+      function refreshLeaderboardStatus() {
+        if (!leaderboardReady) return;
+        if (pendingRunScore > 0) {
+          setLeaderboardStatus(leaderboardUser ? 'RUN FINISHED. SUBMIT YOUR SCORE.' : 'RUN FINISHED. SIGN IN TO SUBMIT YOUR SCORE.');
+        } else {
+          setLeaderboardStatus(leaderboardUser ? 'CONNECTED. PLAY A RUN TO SUBMIT YOUR SCORE.' : 'CONNECTED. SIGN IN TO SUBMIT A RUN.');
+        }
+      }
+
+      function updateLeaderboardSubmit() {
+        leaderboardSubmit.disabled = !leaderboardReady || !leaderboardUser || leaderboardSubmitting || pendingRunScore <= 0;
+      }
+
+      function handleGameMessage(event) {
+        if (event.origin !== window.location.origin || event.source !== gameFrame.contentWindow) return;
+        if (!event.data || typeof event.data !== 'object') return;
+        if (event.data.type === 'run-exe:started') {
+          pendingRunScore = 0;
+        } else if (event.data.type === 'run-exe:finished' && Number.isSafeInteger(event.data.score) && event.data.score > 0) {
+          pendingRunScore = event.data.score;
+        } else {
+          return;
+        }
+        updateLeaderboardSubmit();
+        refreshLeaderboardStatus();
+      }
+
+      window.addEventListener('message', handleGameMessage);
+
+      function renderLeaderboard(snapshot) {
+        const entries = [];
+        snapshot.forEach(child => {
+          const entry = child.val();
+          if (entry && typeof entry.name === 'string' && Number.isFinite(entry.score) && entry.score > 0) {
+            entries.push({ name: entry.name, score: Math.floor(entry.score) });
+          }
+        });
+        entries.sort((a, b) => b.score - a.score);
+        leaderboardList.replaceChildren();
+        if (!entries.length) {
+          const empty = document.createElement('li');
+          empty.textContent = 'NO SCORES YET';
+          leaderboardList.append(empty);
+          return;
+        }
+        entries.slice(0, 10).forEach((entry, index) => {
+          const row = document.createElement('li');
+          const player = document.createElement('span');
+          const score = document.createElement('strong');
+          player.textContent = `${String(index + 1).padStart(2, '0')}. ${entry.name}`;
+          score.textContent = String(entry.score).padStart(5, '0');
+          row.append(player, score);
+          leaderboardList.append(row);
+        });
+      }
+
+      function leaderboardAuthErrorMessage(error) {
+        const messages = {
+          'auth/email-already-in-use': 'ACCOUNT_EXISTS. SWITCH_TO_SIGN_IN.',
+          'auth/invalid-email': 'EMAIL_ADDRESS_INVALID.',
+          'auth/weak-password': 'PASSWORD_TOO_WEAK. USE_AT_LEAST_6_CHARACTERS.',
+          'auth/invalid-credential': 'EMAIL_OR_PASSWORD_INCORRECT.',
+          'auth/user-not-found': 'EMAIL_OR_PASSWORD_INCORRECT.',
+          'auth/wrong-password': 'EMAIL_OR_PASSWORD_INCORRECT.',
+          'auth/too-many-requests': 'TOO_MANY_ATTEMPTS. TRY_AGAIN_LATER.',
+          'auth/unauthorized-domain': 'THIS_WEBSITE_DOMAIN_IS_NOT_AUTHORIZED_IN_FIREBASE.',
+          'auth/operation-not-allowed': 'THIS_SIGN_IN_METHOD_IS_DISABLED_IN_FIREBASE.',
+          'auth/popup-blocked': 'GOOGLE_SIGN_IN_POPUP_WAS_BLOCKED.',
+          'auth/popup-closed-by-user': 'GOOGLE_SIGN_IN_CANCELLED.',
+          'auth/network-request-failed': 'NETWORK_ERROR. CHECK_YOUR_CONNECTION.'
+        };
+        return messages[error.code] || 'AUTHENTICATION_FAILED. CHECK_THE_DETAILS_AND_TRY_AGAIN.';
+      }
+
+      function setLeaderboardAuthMode(mode) {
+        leaderboardAuthMode = mode;
+        const registering = mode === 'register';
+        leaderboardEmailSubmit.textContent = registering ? 'REGISTER' : 'SIGN_IN';
+        leaderboardPassword.autocomplete = registering ? 'new-password' : 'current-password';
+        leaderboardAuthModeToggle.textContent = registering ? 'ALREADY REGISTERED? SIGN IN' : 'NEED AN ACCOUNT? REGISTER';
+        leaderboardPasswordReset.hidden = registering;
+        setLeaderboardAuthStatus('');
+      }
+
+      function isLeaderboardAccount(user) {
+        return Boolean(user && !user.isAnonymous && Array.isArray(user.providerData) && user.providerData.some(provider => provider.providerId === 'google.com' || provider.providerId === 'password'));
+      }
+
+      function updateLeaderboardAuth() {
+        const signedIn = Boolean(leaderboardUser);
+        const displayName = leaderboardUser && (leaderboardUser.displayName || leaderboardUser.email) || 'ACCOUNT';
+        const controls = [leaderboardEmail, leaderboardPassword, leaderboardEmailSubmit, leaderboardGoogleLogin, leaderboardAuthModeToggle, leaderboardPasswordReset];
+        controls.forEach(control => { control.disabled = !leaderboardAuth || leaderboardAuthPending; });
+        leaderboardSignOut.disabled = !leaderboardAuth || leaderboardAuthPending || !signedIn;
+        leaderboardEmailForm.hidden = signedIn;
+        leaderboardAuthActions.hidden = signedIn;
+        leaderboardSignedIn.hidden = !signedIn;
+        leaderboardAccount.textContent = signedIn ? `SIGNED IN AS ${displayName.slice(0, 40)}` : '';
+        updateLeaderboardSubmit();
+      }
+
+      async function connectLeaderboard() {
+        setLeaderboardStatus('CONNECTING TO LEADERBOARD...');
+        try {
+          if (typeof firebase === 'undefined' || !firebase.auth || !firebase.database) throw new Error('Firebase SDK did not load.');
+          if (!firebase.apps.length) firebase.initializeApp({
+            apiKey: 'AIzaSyD1L4Mmgnbl0W7lk1rnaRu5wv61TSFhJqM',
+            authDomain: 'gunkychat.firebaseapp.com',
+            databaseURL: 'https://gunkychat-default-rtdb.firebaseio.com',
+            projectId: 'gunkychat',
+            storageBucket: 'gunkychat.firebasestorage.app',
+            messagingSenderId: '423489767287',
+            appId: '1:423489767287:web:ce847768781b0f589dc372'
+          });
+          leaderboardAuth = firebase.auth();
+          leaderboardAuth.onAuthStateChanged(user => {
+            leaderboardUser = isLeaderboardAccount(user) ? user : null;
+            if (leaderboardUser && leaderboardUser.displayName && !leaderboardName.value) {
+              leaderboardName.value = leaderboardUser.displayName.trim().slice(0, 24);
+            }
+            updateLeaderboardAuth();
+            refreshLeaderboardStatus();
+          }, error => {
+            console.error('Leaderboard authentication state failed:', error);
+            leaderboardUser = null;
+            updateLeaderboardAuth();
+            setLeaderboardAuthStatus('AUTHENTICATION CHECK FAILED.', true);
+          });
+          updateLeaderboardAuth();
+          leaderboardRef = firebase.database().ref('run_exe_leaderboard');
+          leaderboardRef.orderByChild('score').limitToLast(10).on('value', snapshot => {
+            leaderboardReady = true;
+            renderLeaderboard(snapshot);
+            updateLeaderboardSubmit();
+            refreshLeaderboardStatus();
+          }, error => {
+            console.error('Leaderboard read failed:', error);
+            leaderboardReady = false;
+            setLeaderboardStatus('LEADERBOARD READ FAILED. CHECK FIREBASE RULES.', true);
+            updateLeaderboardSubmit();
+          });
+        } catch (error) {
+          console.error('Leaderboard connection failed:', error);
+          setLeaderboardStatus('LEADERBOARD CONNECTION FAILED.', true);
+          updateLeaderboardSubmit();
+        }
+      }
+
+      leaderboardEmailForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        if (!leaderboardAuth || leaderboardAuthPending) return;
+        leaderboardAuthPending = true;
+        updateLeaderboardAuth();
+        setLeaderboardAuthStatus(leaderboardAuthMode === 'register' ? 'CREATING_ACCOUNT...' : 'AUTHENTICATING...');
+        try {
+          const email = leaderboardEmail.value.trim();
+          if (leaderboardAuthMode === 'register') {
+            await leaderboardAuth.createUserWithEmailAndPassword(email, leaderboardPassword.value);
+          } else {
+            await leaderboardAuth.signInWithEmailAndPassword(email, leaderboardPassword.value);
+          }
+          leaderboardPassword.value = '';
+          setLeaderboardAuthStatus('SIGNED_IN. YOUR RUN CAN BE SUBMITTED AFTER GAME OVER.');
+        } catch (error) {
+          console.error('Leaderboard email authentication failed:', error);
+          setLeaderboardAuthStatus(leaderboardAuthErrorMessage(error), true);
+        } finally {
+          leaderboardAuthPending = false;
+          updateLeaderboardAuth();
+        }
+      });
+
+      leaderboardGoogleLogin.addEventListener('click', async () => {
+        if (!leaderboardAuth || leaderboardAuthPending) return;
+        leaderboardAuthPending = true;
+        updateLeaderboardAuth();
+        setLeaderboardAuthStatus('CONNECTING_TO_GOOGLE...');
+        try {
+          await leaderboardAuth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
+          setLeaderboardAuthStatus('SIGNED_IN. YOUR RUN CAN BE SUBMITTED AFTER GAME OVER.');
+        } catch (error) {
+          console.error('Leaderboard Google authentication failed:', error);
+          setLeaderboardAuthStatus(leaderboardAuthErrorMessage(error), true);
+        } finally {
+          leaderboardAuthPending = false;
+          updateLeaderboardAuth();
+        }
+      });
+
+      leaderboardAuthModeToggle.addEventListener('click', () => {
+        setLeaderboardAuthMode(leaderboardAuthMode === 'login' ? 'register' : 'login');
+      });
+
+      leaderboardPasswordReset.addEventListener('click', async () => {
+        const email = leaderboardEmail.value.trim();
+        if (!email) {
+          setLeaderboardAuthStatus('ENTER_YOUR_EMAIL_FIRST.', true);
+          leaderboardEmail.focus();
+          return;
+        }
+        try {
+          await leaderboardAuth.sendPasswordResetEmail(email);
+          setLeaderboardAuthStatus('PASSWORD_RESET_EMAIL_SENT_IF_ACCOUNT_EXISTS.');
+        } catch (error) {
+          console.error('Leaderboard password reset failed:', error);
+          setLeaderboardAuthStatus(leaderboardAuthErrorMessage(error), true);
+        }
+      });
+
+      leaderboardSignOut.addEventListener('click', async () => {
+        if (!leaderboardAuth || leaderboardAuthPending) return;
+        leaderboardAuthPending = true;
+        updateLeaderboardAuth();
+        try {
+          await leaderboardAuth.signOut();
+          setLeaderboardAuthStatus('SIGNED_OUT.');
+        } catch (error) {
+          console.error('Leaderboard sign-out failed:', error);
+          setLeaderboardAuthStatus(leaderboardAuthErrorMessage(error), true);
+        } finally {
+          leaderboardAuthPending = false;
+          updateLeaderboardAuth();
+        }
+      });
+
+      leaderboardForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        if (!leaderboardReady || !leaderboardUser || leaderboardSubmitting || pendingRunScore <= 0) return;
+        const name = leaderboardName.value.trim();
+        if (!name) {
+          setLeaderboardStatus('ENTER A DISPLAY NAME FIRST.', true);
+          leaderboardName.focus();
+          return;
+        }
+        const score = pendingRunScore;
+        const uid = leaderboardUser.uid;
+        leaderboardSubmitting = true;
+        updateLeaderboardSubmit();
+        try {
+          const result = await leaderboardRef.child(uid).transaction(current => {
+            if (current && Number(current.score) >= score) return;
+            return { uid, name, score, timestamp: firebase.database.ServerValue.TIMESTAMP };
+          });
+          setLeaderboardStatus(result.committed ? 'SCORE SUBMITTED.' : 'YOUR BEST SCORE IS ALREADY LISTED.');
+        } catch (error) {
+          console.error('Leaderboard score submission failed:', error);
+          setLeaderboardStatus('SCORE SUBMISSION FAILED. CHECK FIREBASE RULES.', true);
+        } finally {
+          leaderboardSubmitting = false;
+          updateLeaderboardSubmit();
+        }
+      });
+
+      connectLeaderboard();
+    })();
+  </script>
 </body>
 </html>
