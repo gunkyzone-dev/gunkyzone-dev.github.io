@@ -18,8 +18,9 @@
     .section-label { margin: 0 0 10px; color: var(--accent2); border-bottom: 1px solid var(--border); }
     .game-panel { border: 1px solid var(--border); background: var(--panel); padding: 10px; }
     .game-title { margin: 0 0 8px; color: var(--accent); font-size: 26px; }
-    iframe { display: block; width: 100%; height: clamp(360px, 65vh, 560px); border: 1px solid var(--border); background: #000; }
-    @media (max-width: 560px) { .game-panel { padding: 6px; } iframe { height: 420px; } }
+    .game-launch { display: inline-block; padding: 8px 14px; border: 1px solid var(--accent2); color: var(--accent); text-decoration: none; }
+    .game-launch:hover, .game-launch:focus-visible { color: #fff; background: var(--accent2); outline: 2px solid var(--accent); outline-offset: 2px; }
+    @media (max-width: 560px) { .game-panel { padding: 6px; } }
   </style>
 </head>
 <body>
@@ -38,7 +39,8 @@
       <h2 class="section-label">> GAME_ARCHIVE</h2>
       <div class="game-panel">
         <h3 class="game-title" id="run-title">RUN.EXE</h3>
-        <iframe src="RUN_WIP.html" title="RUN.EXE endless runner"></iframe>
+        <p>Play the latest RUN.EXE build.</p>
+        <a class="game-launch" href="RUN.EXE.html">LAUNCH RUN.EXE</a>
       </div>
     </section>
   </main>
